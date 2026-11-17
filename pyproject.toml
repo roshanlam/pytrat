@@ -1,0 +1,102 @@
+# Virtual uv workspace root: tool configuration only, no code.
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "pytest-benchmark>=5.1",
+    "hypothesis>=6.115",
+    "import-linter>=2.1",
+    "types-PyYAML>=6.0",
+    "pre-commit>=4.0",
+]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["packages/*/src", "packages/*/tests", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "PT", "ANN", "D",
+    "C4", "PIE", "RET", "PL", "PERF", "N", "A", "BLE", "TRY", "FBT",
+]
+ignore = [
+    "D105",    # magic-method docstrings
+    "D107",    # __init__ docstrings (documented on the class)
+    "PLR0913", # explicit keyword-heavy constructors are deliberate
+    "TRY003",  # messages built at raise sites are fine; they never include secrets
+    "PLR2004", # protocol numbers are clearer inline in a few places
+    "FBT001", "FBT002",  # boolean keyword-only flags are used intentionally
+    "S105",    # flags every identifier containing "token"; noise in a token library
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR2004", "FBT", "PLC0415", "N802", "SLF001", "ARG", "BLE001", "TRY"]
+"tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR2004", "FBT", "PLC0415", "N802", "SLF001", "ARG", "BLE001", "TRY"]
+"benchmarks/**" = ["S101", "D", "ANN", "INP001"]
+"examples/**" = ["D", "S104", "INP001", "T201"]
+"docs/**" = ["D", "INP001"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+explicit_package_bases = true
+namespace_packages = true
+mypy_path = [
+    "packages/pytrat-core/src",
+    "packages/pytrat-policy/src",
+    "packages/pytrat-client/src",
+    "packages/pytrat-fastapi/src",
+    "packages/pytrat-server/src",
+    "packages/pytrat-agents/src",
+    "packages/pytrat-cli/src",
+    "packages/pytrat-django/src",
+]
+files = ["packages/*/src"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["django.*"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config", "-ra"]
+testpaths = ["packages", "tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: crosses package or process boundaries",
+    "security: attack-oriented scenario",
+    "conformance(section): normative rule from a specification section",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["packages"]
+omit = ["*/tests/*", "*/pytrat/core/testing.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "@overload", "raise NotImplementedError", "\\.\\.\\."]

@@ -1,0 +1,129 @@
+[importlinter]
+root_packages =
+    pytrat.core
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+include_external_packages = True
+
+[importlinter:contract:core-is-standalone]
+name = pytrat.core depends on no other PyTraT package and no web or HTTP framework
+type = forbidden
+source_modules = pytrat.core
+forbidden_modules =
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+    fastapi
+    starlette
+    httpx
+    django
+
+[importlinter:contract:policy]
+name = pytrat.policy depends only on core
+type = forbidden
+source_modules = pytrat.policy
+forbidden_modules =
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+    httpx
+    fastapi
+
+[importlinter:contract:client]
+name = pytrat.client depends only on core
+type = forbidden
+source_modules = pytrat.client
+forbidden_modules =
+    pytrat.policy
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+    fastapi
+
+[importlinter:contract:agents]
+name = pytrat.agents depends only on core
+type = forbidden
+source_modules = pytrat.agents
+forbidden_modules =
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.cli
+    pytrat.django
+
+[importlinter:contract:framework-integrations]
+name = framework integrations never depend on the server, agents, CLI or each other
+type = forbidden
+source_modules =
+    pytrat.fastapi
+    pytrat.django
+forbidden_modules =
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+
+[importlinter:contract:fastapi-django-independent]
+name = FastAPI and Django integrations are independent
+type = independence
+modules =
+    pytrat.fastapi
+    pytrat.django
+
+[importlinter:contract:server]
+name = the reference TTS does not depend on client-side integrations
+type = forbidden
+source_modules = pytrat.server
+forbidden_modules =
+    pytrat.client
+    pytrat.fastapi
+    pytrat.cli
+    pytrat.django
+
+[importlinter:contract:jwt-isolated]
+name = only pytrat.core.crypto imports PyJWT
+type = forbidden
+source_modules =
+    pytrat.core
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+forbidden_modules = jwt
+ignore_imports =
+    pytrat.core.crypto -> jwt
+
+[importlinter:contract:testing-helpers]
+name = production code never imports pytrat.core.testing
+type = forbidden
+source_modules =
+    pytrat.core.validation
+    pytrat.core.claims
+    pytrat.core.binding
+    pytrat.core.audit
+    pytrat.core.keys
+    pytrat.core.crypto
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.django
+forbidden_modules = pytrat.core.testing

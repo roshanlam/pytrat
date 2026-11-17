@@ -1,0 +1,25 @@
+[project]
+name = "pytrat-django"
+version = "0.1.0"
+description = "Django integration for PyTraT Transaction Tokens."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = ["pytrat-core", "pytrat-policy", "pytrat-client", "django>=5.1"]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pytrat"]
+
+[tool.uv.sources]
+pytrat-client = { workspace = true }
+pytrat-core = { workspace = true }
+pytrat-policy = { workspace = true }

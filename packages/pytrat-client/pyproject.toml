@@ -1,0 +1,23 @@
+[project]
+name = "pytrat-client"
+version = "0.1.0"
+description = "RFC 8693 Transaction Token exchange client and propagating HTTP client."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = ["pytrat-core", "httpx>=0.28"]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pytrat"]
+
+[tool.uv.sources]
+pytrat-core = { workspace = true }
