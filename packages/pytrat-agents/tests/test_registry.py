@@ -135,6 +135,10 @@ def test_yaml_store_rejects_invalid_documents(tmp_path: Path, document: str) -> 
     [
         b"\xff\xfe",
         b"agents: [!!int 0x]\n",
+        # Regression (Atheris): IndexError, KeyError, AttributeError from PyYAML constructors.
+        b"agents: [!!int ]\n",
+        b"agents: [!!bool x]\n",
+        b"agents: [!!timestamp x]\n",
         b"agents:\n  - version: 2001-13-14\n",
         b"[" * 2000 + b"]" * 2000,
     ],

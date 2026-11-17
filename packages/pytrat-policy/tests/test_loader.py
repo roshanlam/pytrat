@@ -434,6 +434,11 @@ def test_multiple_documents_are_rejected() -> None:
         "version: 2001-13-14\n",
         "version: !!float x\n",
         "version: !!int 0x\n",
+        # Regression (Atheris, fuzz/fuzz_agent_registry.py): IndexError, KeyError and
+        # AttributeError from PyYAML's constructors.
+        "version: !!int \n",
+        "version: !!bool x\n",
+        "version: !!timestamp x\n",
         "[" * 2000 + "]" * 2000,
         "a: " + "{a: " * 2000 + "1" + "}" * 2000,
     ],

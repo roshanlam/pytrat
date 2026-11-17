@@ -142,6 +142,9 @@ def test_create_app_from_settings_with_sqlite(config, tmp_path):
         # RecursionError escaped load_settings.
         "when: 2024-13-01\n",
         "a: !!float x\n",
+        "a: !!int \n",
+        "a: !!bool x\n",
+        "a: !!timestamp x\n",
         "a: " + "[" * 2000 + "]" * 2000,
     ],
 )

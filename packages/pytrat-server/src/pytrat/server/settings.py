@@ -324,9 +324,10 @@ def load_settings(path: str | Path) -> TtsSettings:
         raise ConfigurationError("configuration file could not be read") from None
     try:
         raw_document = yaml.safe_load(raw_text)
-    except (yaml.YAMLError, ValueError, RecursionError):
-        # PyYAML's constructors raise plain ValueError for values such as 2024-13-01, and deep
-        # nesting exhausts its recursive composer.
+    except Exception:  # noqa: BLE001 - re-raised as a configuration error, never swallowed
+        # PyYAML's constructors raise ValueError, IndexError, KeyError or AttributeError for
+        # tagged scalars such as "!!int", "!!bool x" or 2024-13-01, and deep nesting exhausts its
+        # recursive composer (RecursionError). Any of them means the document is invalid.
         raise ConfigurationError("configuration file is not valid YAML") from None
     if not isinstance(raw_document, Mapping):
         raise ConfigurationError("configuration file must contain a mapping")
