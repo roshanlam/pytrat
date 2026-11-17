@@ -1,0 +1,73 @@
+[project]
+name = "pytrat"
+version = "0.1.0"
+description = "OAuth Transaction Tokens for Python services and AI agents (installs pytrat-core; extras add integrations)."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Roshan Lamichhane", email = "roshanlamichhanenepali@gmail.com" }]
+keywords = ["oauth", "transaction-tokens", "txn-token", "jwt", "authorization", "zero-trust", "microservices", "ai-agents"]
+requires-python = ">=3.12"
+dependencies = ["pytrat-core>=0.1.0,<0.2"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+policy = ["pytrat-policy>=0.1.0,<0.2"]
+client = ["pytrat-client>=0.1.0,<0.2"]
+fastapi = ["pytrat-fastapi>=0.1.0,<0.2"]
+django = ["pytrat-django>=0.1.0,<0.2"]
+server = ["pytrat-server>=0.1.0,<0.2"]
+agents = ["pytrat-agents>=0.1.0,<0.2"]
+redis = ["pytrat-redis>=0.1.0,<0.2"]
+otel = ["pytrat-otel>=0.1.0,<0.2"]
+cli = ["pytrat-cli>=0.1.0,<0.2"]
+all = [
+    "pytrat-policy>=0.1.0,<0.2",
+    "pytrat-client>=0.1.0,<0.2",
+    "pytrat-fastapi>=0.1.0,<0.2",
+    "pytrat-django>=0.1.0,<0.2",
+    "pytrat-server>=0.1.0,<0.2",
+    "pytrat-agents>=0.1.0,<0.2",
+    "pytrat-redis>=0.1.0,<0.2",
+    "pytrat-otel>=0.1.0,<0.2",
+    "pytrat-cli>=0.1.0,<0.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/roshanlam/pytrat"
+Documentation = "https://github.com/roshanlam/pytrat/tree/main/docs"
+Source = "https://github.com/roshanlam/pytrat"
+Issues = "https://github.com/roshanlam/pytrat/issues"
+Changelog = "https://github.com/roshanlam/pytrat/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+# A distribution-only package: it ships no modules (the pytrat namespace is PEP 420).
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[tool.uv.sources]
+pytrat-core = { workspace = true }
+pytrat-policy = { workspace = true }
+pytrat-client = { workspace = true }
+pytrat-fastapi = { workspace = true }
+pytrat-django = { workspace = true }
+pytrat-server = { workspace = true }
+pytrat-agents = { workspace = true }
+pytrat-redis = { workspace = true }
+pytrat-otel = { workspace = true }
+pytrat-cli = { workspace = true }

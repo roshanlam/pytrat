@@ -8,6 +8,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "pytrat",
     "pytrat-agents",
     "pytrat-cli",
     "pytrat-client",
@@ -1748,6 +1749,78 @@ sdist = { url = "https://files.pythonhosted.org/packages/7e/c0/c753d487a83d873f6
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/0e/090c52b122d8ec5fa37942c1410fea9cf04ce98bca0c84dde7f0aa11594d/python_multipart-0.0.34-py3-none-any.whl", hash = "sha256:ebacd224bd686eee2f9aa1066a657affe07435a185834e05e5235e2e59173e91", size = 32585, upload-time = "2026-11-16T10:40:37.119Z" },
 ]
+
+[[package]]
+name = "pytrat"
+version = "0.1.0"
+source = { editable = "packages/pytrat" }
+dependencies = [
+    { name = "pytrat-core" },
+]
+
+[package.optional-dependencies]
+agents = [
+    { name = "pytrat-agents" },
+]
+all = [
+    { name = "pytrat-agents" },
+    { name = "pytrat-cli" },
+    { name = "pytrat-client" },
+    { name = "pytrat-django" },
+    { name = "pytrat-fastapi" },
+    { name = "pytrat-otel" },
+    { name = "pytrat-policy" },
+    { name = "pytrat-redis" },
+    { name = "pytrat-server" },
+]
+cli = [
+    { name = "pytrat-cli" },
+]
+client = [
+    { name = "pytrat-client" },
+]
+django = [
+    { name = "pytrat-django" },
+]
+fastapi = [
+    { name = "pytrat-fastapi" },
+]
+otel = [
+    { name = "pytrat-otel" },
+]
+policy = [
+    { name = "pytrat-policy" },
+]
+redis = [
+    { name = "pytrat-redis" },
+]
+server = [
+    { name = "pytrat-server" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pytrat-agents", marker = "extra == 'agents'", editable = "packages/pytrat-agents" },
+    { name = "pytrat-agents", marker = "extra == 'all'", editable = "packages/pytrat-agents" },
+    { name = "pytrat-cli", marker = "extra == 'all'", editable = "packages/pytrat-cli" },
+    { name = "pytrat-cli", marker = "extra == 'cli'", editable = "packages/pytrat-cli" },
+    { name = "pytrat-client", marker = "extra == 'all'", editable = "packages/pytrat-client" },
+    { name = "pytrat-client", marker = "extra == 'client'", editable = "packages/pytrat-client" },
+    { name = "pytrat-core", editable = "packages/pytrat-core" },
+    { name = "pytrat-django", marker = "extra == 'all'", editable = "packages/pytrat-django" },
+    { name = "pytrat-django", marker = "extra == 'django'", editable = "packages/pytrat-django" },
+    { name = "pytrat-fastapi", marker = "extra == 'all'", editable = "packages/pytrat-fastapi" },
+    { name = "pytrat-fastapi", marker = "extra == 'fastapi'", editable = "packages/pytrat-fastapi" },
+    { name = "pytrat-otel", marker = "extra == 'all'", editable = "packages/pytrat-otel" },
+    { name = "pytrat-otel", marker = "extra == 'otel'", editable = "packages/pytrat-otel" },
+    { name = "pytrat-policy", marker = "extra == 'all'", editable = "packages/pytrat-policy" },
+    { name = "pytrat-policy", marker = "extra == 'policy'", editable = "packages/pytrat-policy" },
+    { name = "pytrat-redis", marker = "extra == 'all'", editable = "packages/pytrat-redis" },
+    { name = "pytrat-redis", marker = "extra == 'redis'", editable = "packages/pytrat-redis" },
+    { name = "pytrat-server", marker = "extra == 'all'", editable = "packages/pytrat-server" },
+    { name = "pytrat-server", marker = "extra == 'server'", editable = "packages/pytrat-server" },
+]
+provides-extras = ["policy", "client", "fastapi", "django", "server", "agents", "redis", "otel", "cli", "all"]
 
 [[package]]
 name = "pytrat-agents"
