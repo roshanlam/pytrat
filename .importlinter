@@ -8,6 +8,7 @@ root_packages =
     pytrat.agents
     pytrat.cli
     pytrat.django
+    pytrat.redis
 include_external_packages = True
 
 [importlinter:contract:core-is-standalone]
@@ -94,6 +95,34 @@ forbidden_modules =
     pytrat.cli
     pytrat.django
 
+[importlinter:contract:redis]
+name = pytrat.redis depends only on core
+type = forbidden
+source_modules = pytrat.redis
+forbidden_modules =
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+
+[importlinter:contract:redis-is-a-leaf]
+name = nothing but the CLI imports pytrat.redis, and only pytrat.redis imports redis
+type = forbidden
+source_modules =
+    pytrat.core
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.django
+forbidden_modules =
+    pytrat.redis
+    redis
+
 [importlinter:contract:jwt-isolated]
 name = only pytrat.core.crypto imports PyJWT
 type = forbidden
@@ -106,6 +135,7 @@ source_modules =
     pytrat.agents
     pytrat.cli
     pytrat.django
+    pytrat.redis
 forbidden_modules = jwt
 ignore_imports =
     pytrat.core.crypto -> jwt
@@ -126,4 +156,5 @@ source_modules =
     pytrat.server
     pytrat.agents
     pytrat.django
+    pytrat.redis
 forbidden_modules = pytrat.core.testing
