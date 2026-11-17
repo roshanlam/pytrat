@@ -1,0 +1,27 @@
+{
+  "verificationRules": {
+    "tokenetesConfigVerificationRule": {
+      "issuer": "https://alphastocks.example/tokenetes",
+      "audience": "https://alphastocks.example/"
+    },
+    "traTsVerificationRules": {
+      "stock-trade-api-trat": {
+        "TraTName": "stock-trade-api-trat",
+        "TraTVerificationRules": [
+          {
+            "traTName": "stock-trade-api-trat",
+            "path": "/api/order",
+            "method": "POST",
+            "purp": "stock-trade",
+            "azdmapping": {
+              "stockId": {"required": true, "value": "${body.stockId}"},
+              "action": {"required": true, "value": "${body.orderType}"},
+              "quantity": {"required": true, "value": "${body.quantity}"}
+            }
+          }
+        ]
+      }
+    },
+    "traTExclRule": null
+  }
+}
