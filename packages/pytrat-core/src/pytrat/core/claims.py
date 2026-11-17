@@ -174,7 +174,8 @@ def parse_claims(payload: Mapping[str, object]) -> TransactionClaims:
     except ValidationError as exc:
         first = exc.errors(include_input=False, include_url=False)[0]
         claim = ".".join(str(part) for part in first["loc"]) or "payload"
-        if first["type"] == "missing":
+        # A missing member inside a present claim makes that claim invalid, not missing.
+        if first["type"] == "missing" and len(first["loc"]) == 1:
             raise TokenError(
                 ReasonCode.CLAIM_MISSING, f"required claim '{claim}' is missing"
             ) from None
