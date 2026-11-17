@@ -1,0 +1,146 @@
+site_name: PyTraT
+site_description: >-
+  OAuth Transaction Tokens (draft-ietf-oauth-transaction-tokens-11) for Python services and
+  AI agents.
+strict: true
+docs_dir: docs
+# Python sources for snippets and hooks are not pages; the vendored drafts are linked as files.
+exclude_docs: |
+  snippets/
+  hooks/
+
+hooks:
+  - docs/hooks/pytrat_docs.py
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.code.annotate
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          # Every package contributes a slice of the PEP 420 `pytrat` namespace.
+          paths:
+            - packages/pytrat-core/src
+            - packages/pytrat-policy/src
+            - packages/pytrat-client/src
+            - packages/pytrat-fastapi/src
+            - packages/pytrat-django/src
+            - packages/pytrat-server/src
+            - packages/pytrat-agents/src
+            - packages/pytrat-cli/src
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            members_order: source
+            filters: public
+            show_if_no_docstring: true
+            heading_level: 2
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      # Snippets are real, type-checked, tested files; a missing one fails the build.
+      base_path: ["."]
+      check_paths: true
+      dedent_subsections: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Concepts: concepts.md
+  - Guides:
+      - FastAPI: guides/fastapi.md
+      - Django: guides/django.md
+      - Client and propagation: guides/client.md
+      - Running the TTS: guides/tts.md
+      - Policies: guides/policies.md
+      - Agents (experimental): guides/agents.md
+      - CLI: guides/cli.md
+      - Errors and reason codes: guides/errors.md
+  - Operations:
+      - Observability (OpenTelemetry): operations/observability.md
+      - Replay protection across instances (Redis): operations/redis-replay.md
+      - Deploying with Docker Compose: operations/docker-compose.md
+  - Security:
+      - Threat model: threat-model.md
+      - Protocol compatibility and profile decisions: compatibility.md
+      - Agent draft reconciliation: spec/agent-profile-03-notes.md
+      - Reporting vulnerabilities: security/policy.md
+      - Fuzzing: security/fuzzing.md
+      - Security audit: security/audit.md
+  - Interoperability:
+      - Tokenetes: interop/tokenetes.md
+  - Benchmarks: benchmarks.md
+  - API reference:
+      - api/index.md
+      - pytrat.core: api/core.md
+      - pytrat.policy: api/policy.md
+      - pytrat.client: api/client.md
+      - pytrat.fastapi: api/fastapi.md
+      - pytrat.django: api/django.md
+      - pytrat.server: api/server.md
+      - pytrat.agents: api/agents.md
+      - pytrat.cli: api/cli.md

@@ -10,7 +10,9 @@ claim conformance with any other revision.
 | OAuth 2.0 Token Exchange | RFC 8693 | Supported for Txn-Token issuance and replacement |
 | JWT Profile for Client Authentication | RFC 7523 | Supported for workload authentication |
 
-The vendored text of both drafts is in [`docs/spec/`](spec/). Programmatic access:
+The vendored text of both drafts is in `docs/spec/`
+([base draft](spec/draft-ietf-oauth-transaction-tokens-11.txt),
+[agent draft](spec/draft-araut-oauth-transaction-tokens-for-agents-03.txt)). Programmatic access:
 `pytrat.core.SUPPORTED_DRAFTS`.
 
 ## How to read the code

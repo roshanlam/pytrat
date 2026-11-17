@@ -20,6 +20,10 @@ dev = [
 # Coverage-guided fuzzing (fuzz/README.md). Atheris publishes Linux x86-64 wheels only; elsewhere
 # run the harnesses through fuzz/Dockerfile.
 fuzz = ["atheris>=3.1; sys_platform == 'linux' and platform_machine == 'x86_64'"]
+docs = [
+    "mkdocs-material>=9.8.1",
+    "mkdocstrings[python]>=1.0.8",
+]
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]
@@ -56,9 +60,11 @@ convention = "google"
 "**/tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR2004", "FBT", "PLC0415", "N802", "SLF001", "ARG", "BLE001", "TRY"]
 "tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR2004", "FBT", "PLC0415", "N802", "SLF001", "ARG", "BLE001", "TRY"]
 "fuzz/**" = ["S106"]  # seed inputs name OAuth parameters such as client_secret
-"benchmarks/**" =["S101", "D", "ANN", "INP001"]
+"benchmarks/**" = ["S101", "D", "ANN", "INP001"]
 "examples/**" = ["D", "S104", "INP001", "T201"]
 "docs/**" = ["D", "INP001"]
+# Snippets shown as "how to test your service" are pytest modules.
+"docs/snippets/try_*.py" = ["S101"]
 
 # ---------------------------------------------------------------- mypy
 [tool.mypy]
@@ -79,8 +85,10 @@ mypy_path = [
     "packages/pytrat-django/src",
     "packages/pytrat-redis/src",
     "packages/pytrat-otel/src",
+    "docs/snippets",
 ]
-files = ["packages/*/src", "fuzz"]
+# docs/snippets are included verbatim in the documentation; type-checking them keeps it honest.
+files = ["packages/*/src", "fuzz", "docs/snippets", "docs/hooks"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]

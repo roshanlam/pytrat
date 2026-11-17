@@ -153,11 +153,16 @@ uv run pytest benchmarks --benchmark-only
 Contributor rules and security invariants: [CLAUDE.md](CLAUDE.md). Design and milestones:
 [plan.md](plan.md). Vulnerability reports: [SECURITY.md](SECURITY.md).
 
+Documentation site (guides, configuration reference, API reference, benchmark report):
+`uv run --group docs mkdocs serve`, sources in [docs/](docs/index.md).
+
 ### Measured performance
 
 Local verification on an Apple-silicon laptop, single core, median: ES256 ≈ 64 µs, PS256 ≈ 46 µs,
 cached repeat ≈ 1.2 µs, four-field `tctx` binding ≈ 2.7 µs. Reproduce with the benchmark command
 above. These numbers are local CPU only; token exchange adds a network round trip to the TTS.
+The full report, including a protected FastAPI request and TTS issuance, is in
+[docs/benchmarks.md](docs/benchmarks.md).
 
 ## License
 

@@ -1,0 +1,41 @@
+version: 1
+trust_domain: payments.internal
+# Lowest first. Omit to use the default: unverified < low < medium < high.
+assurance_levels: [unverified, low, medium, high]
+
+resources:
+  # Body fields bound one-to-one to tctx; each txn may be used here only once.
+  - name: ledger-entry
+    method: POST
+    path: /internal/ledger/entries
+    allowed_scopes: [payments.transfer]
+    allowed_callers: [payment-service]
+    bind_context: [source_account, destination_account, amount_minor, currency]
+    single_use: true
+
+  # A path parameter bound to a differently named tctx member (request path: tctx path).
+  - name: account-read
+    method: GET
+    path: /internal/accounts/{account_id}
+    allowed_scopes: [payments.read, payments.transfer]
+    bind_context:
+      account_id: source_account
+
+  # Agent-mediated requests: at most 3 hops, a chain no weaker than "medium",
+  # and only chains started by the research agent.
+  - name: report-generate
+    method: POST
+    path: /internal/reports
+    allowed_scopes: [reports.generate]
+    agents:
+      enabled: true
+      maximum_hops: 3
+      minimum_assurance: medium
+      allowed_originators: [research-agent]
+
+  # No transaction, but the caller must still be an authenticated, allowlisted workload.
+  - name: metrics
+    method: GET
+    path: /internal/metrics
+    require_transaction: false
+    allowed_callers: [monitoring]
