@@ -40,6 +40,15 @@ The vendored text of both drafts is in [`docs/spec/`](spec/). Programmatic acces
 | P14 | Transport security for the TTS and JWKS endpoints | HTTPS required; plain HTTP only for `localhost`/loopback when explicitly enabled for development. An empty JWKS counts as a failed refresh. |
 | P15 | RFC 7523 client assertions | Lifetime ≤ 60 s from the client; the reference TTS accepts ≤ 5 min and enforces single-use `jti`. |
 | P16 | Outbound propagation | Exact-origin allowlist checked before connecting and again on every request an auth flow yields; redirects never followed; the token is never placed in `Authorization`. |
+| P17 | agent-profile-03 §4.2.3: whether "exceeds" refers to the incoming or resulting `hop_count` | The resulting count is checked on every replacement, including non-agent ones. |
+| P18 | agent-profile-03 §3.5.1 vs §3.6.1 agent identification order | `act.sub` → Agent Attribute Store → `client_id`. If `act.sub` is unregistered and `client_id` resolves to a *different* agent, the request is denied (`AGENT_UNVERIFIED`). On replacement the requesting agent is identified from the requester's authenticated identity, never from the token's `act`. |
+| P19 | agent-profile-03 §3.2.2: client-credentials tokens MUST NOT carry `act` | A subject token that violates this is rejected (`ISSUANCE_NOT_AUTHORIZED`), not silently stripped. |
+| P20 | Agent replaces a token that has no `agentic_ctx` | Denied (`AGENT_CONTEXT_MISSING`) when `require_replacement` is on (default); otherwise a new chain starts with that agent as originator. |
+| P21 | agent-profile-03 §5.13 egress stripping of "internal identifiers" | `strip_for_egress` removes `attr_store_ref`; the draft does not define other internal identifiers. |
+| P22 | Trusted agent runtime | Tool arguments are validated before the tool runs; the tool never receives the token; results containing compact-JWS-shaped strings (or unscannable values) are blocked. Tools whose names or parameter types look like credential operations are refused at registration. |
+
+The full reconciliation of the agent draft, with section references and every ambiguity, is in
+[`docs/spec/agent-profile-03-notes.md`](spec/agent-profile-03-notes.md).
 
 ## Known deviations and gaps
 

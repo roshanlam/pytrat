@@ -4,7 +4,7 @@ This package has no web-framework, HTTP-client or agent-profile dependencies.
 """
 
 from pytrat.core._json import DuplicateKeyError, strict_loads
-from pytrat.core.assurance import AssuranceOrdering
+from pytrat.core.assurance import DEFAULT_LEVELS, AssuranceOrdering
 from pytrat.core.audit import (
     AgentAuditContext,
     AuditEvent,
@@ -41,8 +41,17 @@ from pytrat.core.replay import InMemoryReplayStore, ReplayStore, replay_key
 from pytrat.core.scopes import Scope
 from pytrat.core.secret import SecretToken, token_digest
 from pytrat.core.validation import TokenVerifier, VerifiedToken, VerifierSettings
+from pytrat.core.workload import (
+    FirstMatchAuthenticator,
+    InboundRequest,
+    TrustedProxyHeaderAuthenticator,
+    WorkloadAuthenticator,
+    WorkloadIdentity,
+    WorkloadJwtAuthenticator,
+)
 
 __all__ = [
+    "DEFAULT_LEVELS",
     "SUPPORTED_DRAFTS",
     "TXN_TOKEN_HEADER",
     "TXN_TOKEN_TYP",
@@ -64,8 +73,10 @@ __all__ = [
     "Derived",
     "DuplicateKeyError",
     "EventType",
+    "FirstMatchAuthenticator",
     "FrozenClock",
     "InMemoryReplayStore",
+    "InboundRequest",
     "JsonLinesSink",
     "JsonObject",
     "KeyProvider",
@@ -82,10 +93,14 @@ __all__ = [
     "TokenError",
     "TokenVerifier",
     "TransactionClaims",
+    "TrustedProxyHeaderAuthenticator",
     "VerificationKey",
     "VerifiedJws",
     "VerifiedToken",
     "VerifierSettings",
+    "WorkloadAuthenticator",
+    "WorkloadIdentity",
+    "WorkloadJwtAuthenticator",
     "parse_claims",
     "replay_key",
     "strict_loads",

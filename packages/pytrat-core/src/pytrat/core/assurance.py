@@ -54,7 +54,7 @@ class AssuranceOrdering:
         minimum, an unknown or absent level is treated as the lowest level, so an unrecognised
         value can never raise the chain's assurance.
         """
-        return self.levels[min(self._rank_or_lowest(first), self._rank_or_lowest(second))]
+        return self.levels[min(self.rank(first), self.rank(second))]
 
     def satisfies(self, actual: str | None, required: str) -> bool:
         """Return True if ``actual`` is at least ``required``.
@@ -71,5 +71,6 @@ class AssuranceOrdering:
             )
         return self.levels.index(actual) >= required_rank
 
-    def _rank_or_lowest(self, level: str | None) -> int:
+    def rank(self, level: str | None) -> int:
+        """Position of ``level`` in the ordering; unknown or absent levels rank lowest (0)."""
         return self.levels.index(level) if level in self.levels else 0
