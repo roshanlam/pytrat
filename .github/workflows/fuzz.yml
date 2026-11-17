@@ -1,0 +1,38 @@
+name: fuzz
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # nightly
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds per harness
+        default: "300"
+      targets:
+        description: Space-separated targets (empty = all)
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  atheris:
+    runs-on: ubuntu-latest   # x86-64: Atheris wheels install natively
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --frozen --all-packages --group fuzz
+      - name: Fuzz
+        env:
+          FUZZ_WORK_DIR: ${{ runner.temp }}/fuzz
+        run: uv run fuzz/run.sh "${{ inputs.seconds || '300' }}" ${{ inputs.targets }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-findings
+          path: |
+            ${{ runner.temp }}/fuzz/*/artifacts/
+            ${{ runner.temp }}/fuzz/*/log.txt

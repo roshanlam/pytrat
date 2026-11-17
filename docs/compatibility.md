@@ -56,11 +56,18 @@ The vendored text of both drafts is in [`docs/spec/`](spec/). Programmatic acces
 | P30 | Resource agent constraints on a token without `agentic_ctx` | `minimum_assurance`, `allowed_originators`, `require_verified_agent` and `require_agent_context` deny (`AGENT_CONTEXT_MISSING`); a `maximum_hops` limit alone accepts it (zero agent hops). |
 | P31 | Replay storage across instances (§13.1–§13.2 silent) | `pytrat-redis`: one atomic `SET key 1 NX PX ttl` per first use. Keys are `prefix + SHA-256(replay key)`, so raw `txn` values are never stored. The TTL is relative and computed from PyTraT's clock, not Redis's, and adds a retention margin (default 60 s). Non-finite expiries, expiries more than `max_ttl` ahead (1 h) and already-past expiries are refused, never truncated. Every Redis error, timeout or unexpected reply is `DEPENDENCY_UNAVAILABLE` (deny). No client retries: a retried `SET NX` could report a false replay. |
 | P32 | Audit telemetry (not in the drafts) | `pytrat-otel` exports each audit event as a span event named `pytrat.<event_type>`, with `pytrat.*` attributes that are stable and add-only, plus `pytrat.{authorization,issuance,replacement}.decisions` counters. `subject` is never exported. Any token-shaped string attribute is dropped and counted. When no span is recording, a short `pytrat.audit` span carries the event. |
+| P33 | Nesting depth of untrusted JSON (not in the drafts) | `strict_loads` refuses deeply nested documents and non-finite numbers such as `1e400`. Claim values (`tctx`, `rctx`, `act`, ...) deeper than 64 levels are `CLAIM_INVALID`. Bound values deeper than 32 levels are refused. |
+| P34 | Object keys that collide after Unicode NFC normalisation | Rejected: `TRANSACTION_CONTEXT_MISMATCH` in request data, `CLAIM_INVALID` in `tctx`. Otherwise one spelling could pass binding while the service reads the other. |
+| P35 | Audit sink failure at a resource | A denial keeps its own reason code. A grant that cannot be audited is refused with `DEPENDENCY_UNAVAILABLE` (503). |
 
 The full reconciliation of the agent draft, with section references and every ambiguity, is in
 [`docs/spec/agent-profile-03-notes.md`](spec/agent-profile-03-notes.md).
 
 ## Known deviations and gaps
+
+* When a JWKS endpoint has been unreachable for longer than `max_stale`, resource services deny
+  with 401 `KEY_UNKNOWN` (audited as `token.rejected`) rather than 503: the key lookup fails
+  closed inside verification, so the request is audited like any other unverifiable token.
 
 * Discovery metadata for the TTS is not defined by the draft and is not implemented.
 * Cross-trust-domain flows (txn-tokens-11 §14, identity chaining) are out of scope.
