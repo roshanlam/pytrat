@@ -43,17 +43,36 @@ def _finite_float(literal: str) -> float:
     return value
 
 
-def strict_loads(data: bytes | str) -> object:
-    """Decode JSON, rejecting duplicate keys and non-finite numbers.
+def _reject_lone_surrogates(value: object) -> None:
+    # I-JSON (RFC 7493 §2.1): strings must be valid Unicode. A lone surrogate decodes in Python
+    # but cannot be encoded as UTF-8, so it would fail later when hashed, signed or compared.
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            try:
+                item.encode("utf-8")
+            except UnicodeEncodeError:
+                raise ValueError("string contains a lone surrogate") from None
+        elif isinstance(item, dict):
+            pending.extend(item)
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
 
-    ``NaN``, ``Infinity`` and literals that overflow to infinity (``1e400``) are rejected.
+
+def strict_loads(data: bytes | str) -> object:
+    """Decode JSON, rejecting duplicate keys, non-finite numbers and lone surrogates.
+
+    ``NaN``, ``Infinity`` and literals that overflow to infinity (``1e400``) are rejected, as
+    are strings that are not valid Unicode (I-JSON, RFC 7493 §2.1).
 
     Raises:
         ValueError: If the input is not strict JSON (``DuplicateKeyError`` for duplicate keys),
             including nesting too deep for the decoder.
     """
     try:
-        return json.loads(
+        value = json.loads(
             data,
             object_pairs_hook=_reject_duplicates,
             parse_constant=_reject_constant,
@@ -61,6 +80,8 @@ def strict_loads(data: bytes | str) -> object:
         )
     except RecursionError:
         raise ValueError("JSON nesting is too deep") from None
+    _reject_lone_surrogates(value)
+    return value
 
 
 def compact_dumps(value: object) -> bytes:

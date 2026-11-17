@@ -205,6 +205,17 @@ class TestJson:
         with pytest.raises(ValueError, match="finite"):
             strict_loads(raw)
 
+    @pytest.mark.parametrize(
+        "raw", ['{"\\ud800": 1}', '{"a": "x\\udfff"}', '[["\\ud83d"]]', '"\ud800"']
+    )
+    def test_lone_surrogate_is_rejected(self, raw: str) -> None:
+        """Regression: a lone surrogate decoded, then crashed hashing/signing (I-JSON §2.1)."""
+        with pytest.raises(ValueError, match="surrogate"):
+            strict_loads(raw)
+
+    def test_surrogate_pair_is_accepted(self) -> None:
+        assert strict_loads('{"e": "\\ud83d\\ude00"}') == {"e": "\U0001f600"}
+
     def test_excessive_nesting_is_a_value_error(self) -> None:
         """Regression (found by fuzz/fuzz_strict_json.py): RecursionError escaped."""
         with pytest.raises(ValueError, match="nesting"):

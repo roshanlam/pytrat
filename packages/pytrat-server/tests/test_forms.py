@@ -167,6 +167,9 @@ def test_unknown_parameters_ignored():
         "{",
         "[" * 50 + "]" * 50,
         '{"a":' * 20 + "1" + "}" * 20,
+        # Regression (security review): lone surrogates crashed request_details hashing (500).
+        '{"\\ud800": 1}',
+        '{"a": "\\udfff"}',
     ],
 )
 def test_context_must_be_strict_object(raw):
