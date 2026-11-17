@@ -1,0 +1,48 @@
+{
+  "description": "Txn-Token validation vectors for draft-ietf-oauth-transaction-tokens-11. Each vector mutates a valid baseline token (claims and/or JOSE header) and states whether a conforming verifier for Trust Domain 'payments.internal' accepts it. PyTraT-profile vectors are marked 'profile': true; other implementations may legitimately differ on those.",
+  "baseline": {
+    "header": {"typ": "txntoken+jwt", "alg": "ES256", "kid": "<signing key>"},
+    "claims": {
+      "aud": "payments.internal",
+      "txn": "txn-9274",
+      "sub": "user:123",
+      "scope": "payments.transfer",
+      "req_wl": "api-gateway",
+      "iat": "<now>",
+      "exp": "<now + 60>",
+      "tctx": {"amount_minor": 10000, "currency": "USD"},
+      "rctx": {"authentication_method": "oauth2"}
+    }
+  },
+  "vectors": [
+    {"id": "valid-baseline", "section": "9", "expect": "accept"},
+    {"id": "typ-application-prefix", "section": "9.1", "header": {"typ": "application/txntoken+jwt"}, "expect": "accept"},
+    {"id": "typ-case-insensitive", "section": "9.1", "header": {"typ": "TxnToken+JWT"}, "expect": "accept"},
+    {"id": "typ-jwt", "section": "9.1", "header": {"typ": "JWT"}, "expect": "TOKEN_TYPE_INVALID"},
+    {"id": "typ-missing", "section": "9.1", "header": {"typ": null}, "expect": "TOKEN_TYPE_INVALID"},
+    {"id": "iss-optional", "section": "9.2", "claims": {"iss": null}, "expect": "accept"},
+    {"id": "tctx-optional", "section": "9.2", "claims": {"tctx": null}, "expect": "accept"},
+    {"id": "rctx-optional", "section": "9.2", "claims": {"rctx": null}, "expect": "accept"},
+    {"id": "unknown-claim-ignored", "section": "9.2", "claims": {"x-future": {"a": 1}}, "expect": "accept"},
+    {"id": "missing-aud", "section": "9.2", "claims": {"aud": null}, "expect": "CLAIM_MISSING"},
+    {"id": "missing-txn", "section": "9.2", "claims": {"txn": null}, "expect": "CLAIM_MISSING"},
+    {"id": "missing-sub", "section": "9.2", "claims": {"sub": null}, "expect": "CLAIM_MISSING"},
+    {"id": "missing-scope", "section": "9.2", "claims": {"scope": null}, "expect": "CLAIM_MISSING"},
+    {"id": "missing-req_wl", "section": "9.2", "claims": {"req_wl": null}, "expect": "CLAIM_MISSING"},
+    {"id": "missing-iat", "section": "9.2", "claims": {"iat": null}, "expect": "CLAIM_MISSING"},
+    {"id": "missing-exp", "section": "9.2", "claims": {"exp": null}, "expect": "CLAIM_MISSING"},
+    {"id": "tctx-not-object", "section": "9.2.3", "claims": {"tctx": "amount=10000"}, "expect": "CLAIM_INVALID"},
+    {"id": "rctx-not-object", "section": "9.2.2", "claims": {"rctx": [1]}, "expect": "CLAIM_INVALID"},
+    {"id": "scope-not-string", "section": "11.1", "claims": {"scope": ["payments.transfer"]}, "expect": "CLAIM_INVALID"},
+    {"id": "wrong-trust-domain", "section": "12.2", "claims": {"aud": "ledger.internal"}, "expect": "TRUST_DOMAIN_MISMATCH"},
+    {"id": "expired", "section": "12.2", "claims": {"iat": "<now - 120>", "exp": "<now - 60>"}, "expect": "TOKEN_EXPIRED"},
+    {"id": "aud-array", "section": "P11", "profile": true, "claims": {"aud": ["payments.internal"]}, "expect": "CLAIM_INVALID"},
+    {"id": "lifetime-over-maximum", "section": "P3", "profile": true, "claims": {"exp": "<now + 3600>"}, "expect": "LIFETIME_EXCEEDED"},
+    {"id": "issued-in-future", "section": "P3", "profile": true, "claims": {"iat": "<now + 120>", "exp": "<now + 180>"}, "expect": "TOKEN_NOT_YET_VALID"},
+    {"id": "alg-not-allowlisted", "section": "P1", "profile": true, "header": {"alg": "RS256"}, "expect": "ALGORITHM_NOT_ALLOWED"},
+    {"id": "embedded-jwk", "section": "P2", "profile": true, "header": {"jwk": {"kty": "EC"}}, "expect": "ALGORITHM_NOT_ALLOWED"},
+    {"id": "remote-jku", "section": "P2", "profile": true, "header": {"jku": "https://attacker.example/jwks"}, "expect": "ALGORITHM_NOT_ALLOWED"},
+    {"id": "unknown-kid", "section": "P2", "profile": true, "header": {"kid": "attacker-key"}, "expect": "KEY_UNKNOWN"},
+    {"id": "missing-kid", "section": "P2", "profile": true, "header": {"kid": null}, "expect": "TOKEN_MALFORMED"}
+  ]
+}
