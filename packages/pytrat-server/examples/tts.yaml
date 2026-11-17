@@ -1,0 +1,139 @@
+# PyTraT reference Transaction Token Service (TTS): annotated example configuration.
+#
+# Run with:   python -m pytrat.server --config tts.yaml --host 127.0.0.1 --port 8000
+#
+# The file is validated strictly at startup: unknown keys, wrong types, or inconsistent values stop
+# the process. Relative paths resolve against the directory of THIS file.
+# Specification: draft-ietf-oauth-transaction-tokens-11 ("txn-tokens-11").
+
+# The Trust Domain. Issued tokens carry it as `aud`, and requests must ask for exactly this audience
+# (txn-tokens-11 §11.1, §9.2).
+trust_domain: payments.internal
+
+# Value of the `iss` claim. Verifiers configured with `expected_issuer` require it (PyTraT P7).
+issuer: https://tts.payments.internal
+
+# Absolute URL of POST /token as workloads reach it. RFC 7523 client assertions must name it in
+# `aud`. Self-signed subject tokens may use either `issuer` or this URL as `aud` (§11.2.1).
+token_endpoint: https://tts.payments.internal/token
+
+# Lifetime of issued tokens in seconds (default 60, at most 300; txn-tokens-11 §6, PyTraT P3).
+token_lifetime_seconds: 60
+
+# Clock-skew tolerance for `iat`/`exp` checks on assertions and input Txn-Tokens (0..60, default 5).
+# Subject-token expiry (§6) and replacement-input expiry (§13.15) are checked with NO leeway.
+leeway_seconds: 5
+
+# JWS algorithms the TTS signs with and accepts for client assertions and self-signed subjects.
+# `none` and HS* are rejected and cannot be enabled (PyTraT P1).
+algorithms: [ES256]
+
+# Signing keys: exactly one `active` key signs; `retiring` keys stay in the published JWKS so
+# tokens they signed still verify. Remove a retiring key only after max lifetime + leeway.
+# Private key files must be mode 0600: files readable by group/others are refused.
+signing_keys:
+  - kid: tts-2026-11
+    alg: ES256
+    private_key_path: keys/tts-2026-11.pem
+    state: active
+  - kid: tts-2026-10
+    alg: ES256
+    private_key_path: keys/tts-2026-10.pem
+    state: retiring
+
+# Registered workloads and the public keys they authenticate with (RFC 7523 private_key_jwt).
+# Ids must not contain "," (PyTraT P5). Every `kid` must be unique across all workloads: the
+# assertion's kid identifies its workload. Give either `jwks_path` or inline `jwks`.
+workloads:
+  - id: api-gateway
+    jwks_path: workloads/api-gateway.jwks.json
+    # Optional extra restriction; every entry must equal trust_domain.
+    allowed_audiences: [payments.internal]
+  - id: payment-service
+    jwks_path: workloads/payment-service.jwks.json
+
+# How workloads authenticate (txn-tokens-11 §11.5: mutual authentication is required).
+workload_auth:
+  private_key_jwt: true                 # RFC 7523 client assertions, jti single-use
+  max_assertion_lifetime_seconds: 300   # assertions with a later exp are refused
+  # Optional: identity from a TLS-terminating proxy. The header is honoured ONLY when the TCP peer
+  # is inside trusted_cidrs; the same header from any other peer is rejected as an attack.
+  # trusted_proxy:
+  #   header: X-Client-Cert-SPIFFE-ID
+  #   trusted_cidrs: [10.0.0.0/8]
+
+# Accepted subject tokens (txn-tokens-11 §11.2). Refresh tokens are always refused (§13.3).
+subject_tokens:
+  # JWT access tokens (subject_token_type access_token or jwt). typ must be at+jwt or JWT, exp is
+  # required, and `scope` must be present: an unknown scope is rejected (§13.14).
+  jwt_access_token:
+    - issuer: https://idp.example.com
+      jwks_path: idp/jwks.json          # pinned locally; never fetched from the token
+      audience: https://api.payments.example
+      algorithms: [ES256]
+  # Self-signed JWTs (§11.2.1): iss = requesting workload, aud = this TTS, verified with that
+  # workload's own registered keys. Disabled by default.
+  self_signed:
+    enabled: false
+    max_age_seconds: 300
+  # Unsigned JSON subjects (§11.2.2): only for the listed workloads. Empty = disabled.
+  unsigned_json:
+    allowed_workloads: []
+
+# Issuance policy (txn-tokens-11 §13.10). A workload without a rule obtains nothing.
+issuance_policy:
+  # §6 lets a Txn-Token outlive the presented subject token "subject to the policy of the TTS".
+  # PyTraT default: cap exp at the subject token's exp.
+  cap_lifetime_at_subject_exp: true
+  workloads:
+    api-gateway:
+      # Granted scope = requested ∩ these ∩ the subject token's scope (§13.6). Empty -> invalid_scope.
+      scopes: [payments.transfer, payments.read]
+      audiences: [payments.internal]
+      max_lifetime_seconds: 60
+      # request_details members copied into tctx, each with its required JSON type:
+      # string | integer | boolean | object | array | number. Floats are refused unless the type
+      # is `number` (money safety). Unlisted members are dropped and their NAMES audited.
+      tctx:
+        source_account: string
+        destination_account: string
+        amount_minor: integer
+        currency: string
+      # request_context members copied into rctx. `authn` is reserved: the TTS derives it from
+      # the subject token (amr/acr/auth_time).
+      rctx:
+        req_ip: string
+    payment-service:
+      scopes: [payments.transfer, payments.read, ledger.write]
+      # May present a Txn-Token as subject_token to obtain a replacement (§13.15).
+      may_replace: true
+
+# Replacement (§13.15). txn, sub, aud, iss, tctx and act never change; scope only shrinks; rctx
+# only gains members. By default a replacement never outlives its input.
+replacement:
+  extend_lifetime: false
+  # Applies when extend_lifetime is true: replacements per txn that may extend the lifetime.
+  max_replacements_per_txn: 10
+
+# Experimental agent profile (draft-araut-oauth-transaction-tokens-for-agents-03).
+agents:
+  enabled: false
+  max_hops: 5                                   # replacement beyond this hop_count is refused
+  assurance_levels: [unverified, low, medium, high]   # lowest first
+  # default_assurance: unverified               # level assumed when a chain recorded none
+  registry_path: agents.yaml                    # the Agent Attribute Store (required if enabled)
+  include_assurance: true                       # record min_assurance_level at issuance
+  require_replacement: true                     # an agent may not replace a token without agentic_ctx
+  # attr_store_ref: https://aas.payments.internal   # informational only
+
+# Hash-chained, append-only SQLite issuance log (PyTraT P9). Omit for an in-memory log
+# (development only; a warning is logged).
+audit_db_path: data/issuance.db
+
+# Per-workload token bucket. Over the limit: HTTP 429 slow_down.
+rate_limit:
+  requests_per_second: 50
+  burst: 100
+
+# Largest accepted request body in bytes. Larger bodies get HTTP 413.
+max_request_bytes: 32768

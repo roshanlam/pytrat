@@ -46,6 +46,11 @@ The vendored text of both drafts is in [`docs/spec/`](spec/). Programmatic acces
 | P20 | Agent replaces a token that has no `agentic_ctx` | Denied (`AGENT_CONTEXT_MISSING`) when `require_replacement` is on (default); otherwise a new chain starts with that agent as originator. |
 | P21 | agent-profile-03 §5.13 egress stripping of "internal identifiers" | `strip_for_egress` removes `attr_store_ref`; the draft does not define other internal identifiers. |
 | P22 | Trusted agent runtime | Tool arguments are validated before the tool runs; the tool never receives the token; results containing compact-JWS-shaped strings (or unscannable values) are blocked. Tools whose names or parameter types look like credential operations are refused at registration. |
+| P23 | Reference TTS request surface | `client_secret` (symmetric client auth), `actor_token` and `resource` parameters are refused; duplicate form parameters are rejected. |
+| P24 | Issuance-policy context allowlists | `request_details` → `tctx` and `request_context` → `rctx` copy only allowlisted members; unlisted members are dropped (names audited). An allowlisted member with the wrong JSON type rejects the request rather than being dropped. Floats are disallowed by default. |
+| P25 | Subject tokens (§11.2) | `self_signed` and `unsigned_json` are disabled by default. A subject without a known scope is rejected (§13.6, §13.14). Client-credentials subjects are detected by `gty=client-credentials` or `sub == client_id`. Subject and replacement-input expiry (§6, §13.15) are checked with zero leeway. |
+| P26 | Txn-Token lifetime vs subject lifetime (§6 leaves it to policy) | `exp` is capped at the subject token's `exp` by default. On replacement, `exp` is capped at the input token's `exp` unless `extend_lifetime` is enabled, in which case `max_replacements_per_txn` applies. |
+| P27 | `act` when the agent profile is disabled | Copied unchanged from the subject token (RFC 8693 semantics); `agentic_ctx` on an input token is carried forward unmodified. |
 
 The full reconciliation of the agent draft, with section references and every ambiguity, is in
 [`docs/spec/agent-profile-03-notes.md`](spec/agent-profile-03-notes.md).
@@ -55,3 +60,5 @@ The full reconciliation of the agent draft, with section references and every am
 * Discovery metadata for the TTS is not defined by the draft and is not implemented.
 * Cross-trust-domain flows (txn-tokens-11 §14, identity chaining) are out of scope.
 * `unsigned_json` subject tokens (§11.2.2) are supported by the reference TTS but disabled by default.
+* The reference TTS rate-limits per *authenticated* workload. Unauthenticated floods are bounded only
+  by request-size limits; put the TTS behind an ingress rate limiter in production.
