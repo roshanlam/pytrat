@@ -33,6 +33,7 @@ from pytrat.core.errors import (
     DependencyError,
     PyTraTError,
     ReasonCode,
+    RequestError,
     TokenError,
     problem_details,
 )
@@ -87,6 +88,7 @@ __all__ = [
     "PyTraTError",
     "ReasonCode",
     "ReplayStore",
+    "RequestError",
     "Scope",
     "SecretToken",
     "StaticKeySet",

@@ -22,6 +22,8 @@ dev = [
 line-length = 100
 target-version = "py312"
 src = ["packages/*/src", "packages/*/tests", "tests"]
+# Markdown code blocks in the design docs are illustrative pseudo-code, not formatted source.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = [

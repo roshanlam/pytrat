@@ -12,7 +12,7 @@ from django.http.request import RawPostDataException
 from pytrat.core import (
     InboundRequest,
     PyTraTError,
-    ReasonCode,
+    RequestError,
     problem_details,
     strict_loads,
 )
@@ -27,14 +27,8 @@ _UNPREFIXED_HEADERS: Final = {"CONTENT_TYPE": "Content-Type", "CONTENT_LENGTH": 
 _TXN_TOKEN_META_KEY: Final = "HTTP_" + TXN_TOKEN_HEADER.upper().replace("-", "_")
 
 
-class RequestDataError(PyTraTError):
+class RequestDataError(RequestError):
     """The request body or parameters cannot be turned into unambiguous request data."""
-
-    http_status: ClassVar[int] = 400
-    title: ClassVar[str] = "Request data invalid"
-
-    def __init__(self, detail: str) -> None:
-        super().__init__(ReasonCode.REQUEST_MALFORMED, detail)
 
 
 class UnsupportedBodyError(RequestDataError):

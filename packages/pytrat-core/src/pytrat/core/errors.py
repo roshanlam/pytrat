@@ -106,6 +106,19 @@ class AuthorizationError(PyTraTError):
     title: ClassVar[str] = "Transaction not authorized"
 
 
+class RequestError(PyTraTError):
+    """The request's own data (body, parameters) is malformed or ambiguous.
+
+    Framework integrations subclass this to choose 400, 415 or 422.
+    """
+
+    http_status: ClassVar[int] = 400
+    title: ClassVar[str] = "Malformed request"
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(ReasonCode.REQUEST_MALFORMED, detail)
+
+
 class ConfigurationError(PyTraTError):
     """Configuration is invalid. Raised at startup, never on the request path."""
 
