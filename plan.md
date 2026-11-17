@@ -675,3 +675,50 @@ exporter; external security review; published benchmark report.
 Cross-trust-domain forwarding (spec points to identity chaining), acting as an OAuth authorization
 server, service-mesh/Kubernetes integration, policy languages beyond the YAML schema (ports exist),
 and any API that lets application or model code sign tokens.
+
+---
+
+## 10. Implementation notes (as built)
+
+Deviations from the sections above, made during implementation. Each was reviewed; protocol-level
+choices are also listed in `docs/compatibility.md`.
+
+**Core**
+- `pytrat.core.jws.verify_jws` is the single signature-verification path. `TokenVerifier` uses it
+  for Txn-Tokens; the TTS uses it (with a different `allowed_typ`) for client assertions and JWT
+  subject tokens.
+- `AssuranceOrdering` lives in core (see §3.1) so resource policy can use it without `agents`.
+- Resource-side workload authentication (`pytrat.core.workload`: `WorkloadJwtAuthenticator`,
+  `TrustedProxyHeaderAuthenticator`, `FirstMatchAuthenticator`) lives in core because it is
+  framework-agnostic and I/O-free. The outbound half is `pytrat.client.WorkloadJwtAuth`.
+- Errors gained `AuthenticationError` (401), a class-level `title`, an instance `transaction_id`
+  (set only after verification), and the shared RFC 9457 builder `problem_details` using
+  `urn:pytrat:problem:<REASON>` type URIs. New reason codes: `TOOL_ARGUMENTS_INVALID`,
+  `TOOL_RESULT_BLOCKED`, `REQUEST_MALFORMED`.
+
+**Policy**
+- `pytrat.policy.TransactionEnforcer` is the framework-agnostic per-request pipeline (one
+  `Txn-Token` → verify → authenticate caller → evaluate policy → one audit event). FastAPI and
+  Django are thin adapters over it.
+- Duplicate YAML keys are rejected; settings that would be silently ignored are rejected;
+  `require_verified_agent` implies an agent context is required.
+
+**Client**
+- `replace()` additionally checks the TTS reply attenuates the input (`check_replacement`).
+- Caller-supplied `httpx.Auth` flows are wrapped so every request they yield is re-checked against
+  the destination allowlist and the "never in `Authorization`" rule.
+
+**Agents**
+- Reconciled against the verbatim draft in `docs/spec/agent-profile-03-notes.md` (resolves the
+  verification debt in §2.3). Adds `strip_for_egress` (§5.13). The runtime refuses tools that look
+  like credential operations and blocks unscannable results.
+
+**Server**
+- `plan_issuance` / `plan_replacement` return plans (claims + audit-safe dropped key names).
+  `Signer.sign(payload)` takes no header. Issuance policy model is in `issuance_policy.py`.
+- Rate limiting is per authenticated workload only (documented gap).
+
+**Django**
+- Settings: `PYTRAT = {"ENFORCER", "POLICY", "PROTECTED_PREFIXES", "DEBUG_ERRORS", "REPLAY_STORE",
+  "AGENT_DIRECTORY"}`, validated in `AppConfig.ready()`. A comma in `Txn-Token` (WSGI-joined
+  duplicates) is rejected as two tokens.
