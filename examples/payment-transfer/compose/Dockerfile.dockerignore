@@ -1,0 +1,20 @@
+# BuildKit reads <Dockerfile>.dockerignore (next to the Dockerfile) in preference to a
+# .dockerignore at the root of the build context, so this applies to the repository-root context.
+# Allowlist: send only what the image needs; never keys, certificates, virtualenvs or caches.
+*
+!pyproject.toml
+!uv.lock
+!packages/
+!examples/payment-transfer/payment_demo/
+
+**/__pycache__
+**/*.py[cod]
+**/.venv
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+**/*.pem
+**/*.key
+**/*.crt
+**/*.sqlite3
+packages/*/tests
