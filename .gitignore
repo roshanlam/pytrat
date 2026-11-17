@@ -20,3 +20,4 @@ site/
 examples/**/keys/
 .env
 .DS_Store
+.claude/worktrees/

@@ -9,6 +9,7 @@ root_packages =
     pytrat.cli
     pytrat.django
     pytrat.redis
+    pytrat.otel
 include_external_packages = True
 
 [importlinter:contract:core-is-standalone]
@@ -23,6 +24,7 @@ forbidden_modules =
     pytrat.agents
     pytrat.cli
     pytrat.django
+    pytrat.otel
     fastapi
     starlette
     httpx
@@ -66,6 +68,25 @@ forbidden_modules =
     pytrat.server
     pytrat.cli
     pytrat.django
+
+[importlinter:contract:otel]
+name = pytrat.otel depends only on core and the OpenTelemetry API
+type = forbidden
+source_modules = pytrat.otel
+forbidden_modules =
+    pytrat.policy
+    pytrat.client
+    pytrat.fastapi
+    pytrat.server
+    pytrat.agents
+    pytrat.cli
+    pytrat.django
+    pytrat.redis
+    fastapi
+    starlette
+    httpx
+    django
+    redis
 
 [importlinter:contract:framework-integrations]
 name = framework integrations never depend on the server, agents, CLI or each other
@@ -119,6 +140,7 @@ source_modules =
     pytrat.server
     pytrat.agents
     pytrat.django
+    pytrat.otel
 forbidden_modules =
     pytrat.redis
     redis
@@ -136,6 +158,7 @@ source_modules =
     pytrat.cli
     pytrat.django
     pytrat.redis
+    pytrat.otel
 forbidden_modules = jwt
 ignore_imports =
     pytrat.core.crypto -> jwt
@@ -157,4 +180,5 @@ source_modules =
     pytrat.agents
     pytrat.django
     pytrat.redis
+    pytrat.otel
 forbidden_modules = pytrat.core.testing
