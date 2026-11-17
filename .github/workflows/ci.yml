@@ -45,3 +45,34 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv export --all-packages --frozen --no-hashes --no-emit-workspace > requirements.txt
       - run: uvx pip-audit -r requirements.txt
+
+  redis-integration:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 2s
+          --health-timeout 2s --health-retries 15
+    env:
+      PYTRAT_TEST_REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --all-packages --frozen
+      - run: uv run pytest packages/pytrat-redis -q
+
+  compose-smoke:
+    name: payment demo on Docker Compose (TLS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - run: uv sync --all-packages --frozen
+      - name: Build, honest transfer 201, tampered transfer 403, teardown
+        env:
+          PYTRAT_TEST_COMPOSE: "1"
+        run: uv run pytest tests/integration/test_payment_compose.py -q
