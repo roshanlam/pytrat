@@ -29,6 +29,7 @@ type Path = tuple[str, ...]
 type Transform = Callable[[object], object]
 
 _MISSING: Final = object()
+_MAX_DEPTH: Final = 32
 
 
 class UnbindableValueError(Exception):
@@ -206,23 +207,37 @@ def canonical(value: object) -> object:
     """Return the canonical comparison form of a JSON-like value.
 
     Raises:
-        UnbindableValueError: If the value contains a float or a non-JSON type.
+        UnbindableValueError: If the value contains a float or a non-JSON type, two object keys
+            that are equal after NFC normalisation, or nesting deeper than 32 levels.
     """
+    return _canonical(value, 0)
+
+
+def _canonical(value: object, depth: int) -> object:
     if value is None or isinstance(value, bool):
         return value
     if isinstance(value, int):
         return int(value)  # IntEnum and other int subclasses compare as int
     if isinstance(value, str):
         return unicodedata.normalize("NFC", str(value))
+    # PyTraT profile: bound values nest at most _MAX_DEPTH levels, so hostile request bodies
+    # fail the binding instead of exhausting the interpreter stack.
+    if depth >= _MAX_DEPTH:
+        raise UnbindableValueError
     if isinstance(value, Mapping):
         result: dict[str, object] = {}
         for key, item in value.items():
             if not isinstance(key, str):
                 raise UnbindableValueError
-            result[unicodedata.normalize("NFC", key)] = canonical(item)
+            normalised_key = unicodedata.normalize("NFC", key)
+            if normalised_key in result:
+                # Two keys that compare equal are ambiguous: the service may read the one the
+                # check never compared (e.g. precomposed "é" vs "e" + combining acute).
+                raise UnbindableValueError
+            result[normalised_key] = _canonical(item, depth + 1)
         return result
     if isinstance(value, list | tuple):
-        return [canonical(item) for item in value]
+        return [_canonical(item, depth + 1) for item in value]
     # Floats (ambiguous for money), bytes, Decimals, datetimes and objects are not bindable.
     raise UnbindableValueError
 

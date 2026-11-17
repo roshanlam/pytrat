@@ -166,6 +166,36 @@ class TestDenials:
             denial(binding, TCTX, {"amount_major": None}) is ReasonCode.TRANSACTION_CONTEXT_MISMATCH
         )
 
+    def test_keys_colliding_after_nfc_smuggle_no_value_past_the_check(self) -> None:
+        """Regression (found by fuzz/fuzz_binding.py): NFC folded two request keys into one.
+
+        The service reads the precomposed key ("account-EVIL") while the check compared only the
+        decomposed one, which matched the authorized value.
+        """
+        binding = ContextBinding.compile(["beneficiary"])
+        tctx = {"beneficiary": {"café": "account-B"}}
+        request = {"beneficiary": {"café": "account-EVIL", "café": "account-B"}}
+        assert denial(binding, tctx, request) is ReasonCode.TRANSACTION_CONTEXT_MISMATCH
+
+    def test_tctx_keys_colliding_after_nfc_are_an_invalid_claim(self) -> None:
+        tctx = {"beneficiary": {"café": "account-B", "café": "account-B"}}
+        with pytest.raises(TokenError) as excinfo:
+            ContextBinding.compile(["beneficiary"]).check(tctx, tctx)
+        assert excinfo.value.reason is ReasonCode.CLAIM_INVALID
+
+    def test_deeply_nested_request_value_fails_closed(self) -> None:
+        """Regression (found by fuzz/fuzz_binding.py): RecursionError escaped the check."""
+        deep: object = 1
+        for _ in range(5000):
+            deep = [deep]
+        binding = ContextBinding.compile(["amount_minor"])
+        assert (
+            denial(binding, TCTX, {"amount_minor": deep}) is ReasonCode.TRANSACTION_CONTEXT_MISMATCH
+        )
+        with pytest.raises(TokenError) as excinfo:
+            binding.check({"amount_minor": deep}, {"amount_minor": deep})
+        assert excinfo.value.reason is ReasonCode.CLAIM_INVALID
+
     def test_detail_names_path_but_never_values(self) -> None:
         with pytest.raises(AuthorizationError) as excinfo:
             ContextBinding.compile(FIELDS).check(
