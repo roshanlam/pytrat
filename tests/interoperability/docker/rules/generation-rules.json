@@ -1,0 +1,28 @@
+{
+  "generationRules": {
+    "tokenetesConfigGenerationRule": {
+      "token": {
+        "issuer": "https://alphastocks.example/tokenetes",
+        "audience": "https://alphastocks.example/",
+        "lifeTime": "60s"
+      },
+      "subjectTokens": {
+        "selfSigned": {"validation": false, "jwksEndpoint": ""}
+      },
+      "tokenGenerationAuthorizedServiceIds": ["spiffe://interop.test/gateway"]
+    },
+    "traTsGenerationRules": {
+      "stock-trade-api-trat": {
+        "traTName": "stock-trade-api-trat",
+        "path": "/api/order",
+        "method": "POST",
+        "purp": "stock-trade",
+        "azdmapping": {
+          "stockId": {"required": true, "value": "${body.stockId}"},
+          "action": {"required": true, "value": "${body.orderType}"},
+          "quantity": {"required": true, "value": "${body.quantity}"}
+        }
+      }
+    }
+  }
+}

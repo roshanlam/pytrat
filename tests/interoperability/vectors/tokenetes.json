@@ -1,0 +1,44 @@
+{
+  "_about": "Shapes of Tokenetes Transaction Tokens and requests, reproduced from Tokenetes source. Values are illustrative; no Tokenetes key material is copied. Tests re-sign these shapes with freshly generated keys. '<now>' and '<now + N>' are resolved at test time; '<uuid>' becomes a random UUID string.",
+  "_sources": {
+    "tokenetes": "https://github.com/tokenetes/tokenetes @ f9b7acf60f2df60acbe9749e570a502aa0193fb6 (main, 2026-07-30; last release v1.0.1 @ 35b4923)",
+    "tokenetes-agent": "https://github.com/tokenetes/tokenetes-agent @ b848c12ad3ac5a5d6bc89d5b46ac9c64b68a8af4 (main, 2025-04-14; last release v1.0.0)",
+    "example-application": "https://github.com/tokenetes/example-application @ 2bd679d6a5ed968fc1c29ef914147398fb05b3fd"
+  },
+  "token": {
+    "_source": "tokenetes service/pkg/service/service.go GenerateTxnToken: jwt.SigningMethodRS256, Header typ = TOKEN_JWT_HEADER ('txn_token'), kid = keys.GetKid(); claims iss, iat, aud, exp, txn (uuid), sub, purp, azd, rctx. service/pkg/keys/keys.go: kid = base64.StdEncoding of 16 random bytes, RSA-2048 key generated at process start.",
+    "header": {"alg": "RS256", "kid": "<tokenetes-kid>", "typ": "txn_token"},
+    "claims": {
+      "iss": "https://alphastocks.example/tokenetes",
+      "iat": "<now>",
+      "aud": "https://alphastocks.example/",
+      "exp": "<now + 15>",
+      "txn": "<uuid>",
+      "sub": {"format": "email", "email": "alice@example.com"},
+      "purp": "stock-trade",
+      "azd": {"stockId": 7, "action": "BUY", "quantity": 5},
+      "rctx": {"req_ip": "203.0.113.7"}
+    },
+    "_claims_source": {
+      "iss/aud/exp": "TokenetesConfig spec.token.issuer / audience / lifeTime (example-application deploy/alpha-stocks-dev/tokenetes-resources/tokenetescfg.yaml: lifeTime '15s'). Hostnames changed to .example.",
+      "sub": "service/pkg/subjectidentifier/subjectidentifier.go: OIDC subjects become {format: email, email}; self-signed subjects copy the subject token's 'sub' verbatim (selfSignedTokenHandler.go ExtractSubject), so a string is also possible.",
+      "purp/azd": "service/pkg/generationrules/v1alpha1/rules.go ConstructPurpAndAzd; azd is null when the TraT rule has no azdMapping. Mapping from example-application stock-trade-api-trat.yaml.",
+      "rctx": "Copied verbatim from the caller's base64url request_context (service/handler/handler.go). example-application gateway sends {req_ip}."
+    }
+  },
+  "jwks": {
+    "_source": "tokenetes service/pkg/keys/keys.go generateKeys: jwk.New(rsa public), alg RS256, use sig, kid. Served only over the tconfigd WebSocket (GET_JWKS_REQUEST), never over HTTP.",
+    "key_members": ["alg", "e", "kid", "kty", "n", "use"]
+  },
+  "token_request": {
+    "_source": "tokenetes service/handler/handler.go TokenEndpointHandler (POST /token_endpoint on :443, SPIFFE mTLS, caller SPIFFE ID must be in tokenGenerationAuthorizedServiceIds).",
+    "required_form_fields": ["grant_type", "subject_token", "subject_token_type", "audience", "requested_token_type", "request_details", "request_context"],
+    "subject_token_types": ["urn:ietf:params:oauth:token-type:id_token", "urn:ietf:params:oauth:token-type:self_signed"],
+    "request_details_encoding": "base64url (unpadded) JSON {path, method, queryParameters, headers, body}",
+    "request_context_encoding": "base64url (unpadded) JSON object",
+    "response_members": ["token_type", "issued_token_type", "access_token"]
+  },
+  "agent_claims": {
+    "_source": "tokenetes-agent service/trat/trat.go: TraT{txn string, sub {format, email}, req_ctx {req_ip, authn, req_wl []string}, purp string, azd map, jwt.StandardClaims}; service/tratverifier/tratverifier.go accepts only *jwt.SigningMethodRSA (RS256/384/512) and requires kid; typ is never checked."
+  }
+}

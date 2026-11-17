@@ -90,6 +90,7 @@ markers = [
     "integration: crosses package or process boundaries",
     "security: attack-oriented scenario",
     "conformance(section): normative rule from a specification section",
+    "interop: needs an external implementation (e.g. Tokenetes); skipped unless it is running",
 ]
 filterwarnings = ["error"]
 

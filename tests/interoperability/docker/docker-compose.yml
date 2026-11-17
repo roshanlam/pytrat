@@ -1,0 +1,21 @@
+# Usage (from the repository root):
+#   docker compose -f tests/interoperability/docker/docker-compose.yml up -d --build --wait
+#   PYTRAT_TOKENETES_URL=http://127.0.0.1:18080 uv run pytest tests/interoperability -m interop -v
+#   docker compose -f tests/interoperability/docker/docker-compose.yml down
+services:
+  tokenetes-stack:
+    build: .
+    sysctls:
+      # Tokenetes binds :80 and :443 hard-coded; let the non-root uid bind them.
+      net.ipv4.ip_unprivileged_port_start: "0"
+    ports:
+      - "127.0.0.1:18080:8080"   # mock tconfigd control API (plain HTTP)
+      - "127.0.0.1:18443:443"    # Tokenetes token endpoint (SPIFFE mTLS)
+      - "127.0.0.1:19030:9030"   # tokenetes-agent /verify-trat (plain HTTP)
+    volumes:
+      - ./.run:/run/interop-out  # gateway X.509-SVID for the host test client
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
