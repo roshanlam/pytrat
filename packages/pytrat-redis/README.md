@@ -1,5 +1,6 @@
 # pytrat-redis
 
+<!-- --8<-- [start:usage] -->
 Redis-backed `ReplayStore` for PyTraT deployments that run more than one process or instance.
 
 ```python
@@ -74,3 +75,4 @@ sets short socket timeouts (0.5 s by default) and disables client retries. When 
 `redis.Redis` client, configure equivalent timeouts.
 
 See the repository README for documentation.
+<!-- --8<-- [end:usage] -->

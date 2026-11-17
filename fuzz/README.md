@@ -1,5 +1,6 @@
 # Coverage-guided fuzzing
 
+<!-- --8<-- [start:usage] -->
 Atheris (libFuzzer for Python) harnesses for every PyTraT parser that sees untrusted input. Each
 harness asserts the library's contract, not just "does not crash": arbitrary input yields a value
 or the *specific* PyTraT error the API documents, never another exception type, and accepted
@@ -66,3 +67,4 @@ added to a harness's `seeds()` becomes a permanent test.
 
 The JWKS seeds contain freshly generated public keys, so regenerating rewrites those files; that
 churn is expected.
+<!-- --8<-- [end:usage] -->

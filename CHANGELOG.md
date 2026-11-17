@@ -19,3 +19,19 @@ All notable changes to this project are documented here. The format follows
 - `pytrat-agents` (experimental): `draft-araut-oauth-transaction-tokens-for-agents-03` profile.
 - `pytrat-cli`: key generation, JWKS export, policy checks, token inspection, TTS runner.
 - Examples: payment-transfer demo (in-process and real sockets) and agent delegation, run in CI.
+- `pytrat-redis`: Redis replay store for multi-instance single use (atomic `SET NX PX`,
+  per-service `namespace`, forced TLS verification, `verify_configuration()` for `noeviction`).
+- `pytrat-otel`: `OpenTelemetryAuditSink` (span events and `pytrat.*.decisions` counters; never
+  exports tokens or subjects).
+- Docker Compose deployment of the payment demo with verified TLS on every hop.
+- Atheris harnesses for every untrusted-input parser (nightly CI), failure-injection suite,
+  Tokenetes interoperability report and tests, mkdocs documentation site, benchmark report.
+
+### Fixed
+
+- Context binding: object keys colliding after NFC normalisation could bypass binding.
+- Single-use records now outlive the verifier's `exp` leeway (replay window of up to 60 s).
+- Strict JSON rejects `1e400`, lone surrogates and excessive nesting; deep claims are `CLAIM_INVALID`.
+- A failing audit sink keeps a denial's reason at resources and refuses unaudited grants (503);
+  at the TTS the issuance log is authoritative.
+- YAML loaders report every parse failure as `ConfigurationError`.

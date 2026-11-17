@@ -76,3 +76,11 @@ jobs:
         env:
           PYTRAT_TEST_COMPOSE: "1"
         run: uv run pytest tests/integration/test_payment_compose.py -q
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --all-packages --frozen --group docs
+      - run: uv run --group docs mkdocs build --strict

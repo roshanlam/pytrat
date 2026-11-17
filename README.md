@@ -36,8 +36,9 @@ ledger entries recorded: 0
 ```
 
 A compromised intermediary can change the request it forwards, but it holds no signing key, so it
-cannot change what the token authorized. No Kubernetes, no containers; see
-[examples/payment-transfer](examples/payment-transfer).
+cannot change what the token authorized. It needs no Kubernetes and no containers. The same demo
+also runs as four containers with verified TLS on every hop (`examples/payment-transfer/compose`).
+See [examples/payment-transfer](examples/payment-transfer).
 
 ## Protecting a FastAPI route
 
@@ -113,6 +114,8 @@ Django has the equivalent `@require_transaction` decorator and middleware
 | [`pytrat-django`](packages/pytrat-django) | Decorator, middleware, system checks. | core, policy, client |
 | [`pytrat-server`](packages/pytrat-server) | Reference Transaction Token Service: RFC 7523 workload auth, issuance policy, replacement, key rotation, hash-chained audit log. | core, policy, agents |
 | [`pytrat-agents`](packages/pytrat-agents) | *Experimental* agent profile: Agent Attribute Store, monotonic chain attenuation, trusted tool runtime. | core |
+| [`pytrat-redis`](packages/pytrat-redis) | Shared replay store for multi-instance single use. | core, redis |
+| [`pytrat-otel`](packages/pytrat-otel) | OpenTelemetry audit sink. | core, opentelemetry-api |
 | [`pytrat-cli`](packages/pytrat-cli) | `pytrat keys`, `pytrat policy check`, `pytrat token inspect`, `pytrat tts serve`. | all |
 
 Dependencies point one way only, and `import-linter` enforces it in CI (`.importlinter`).
@@ -146,7 +149,8 @@ uv sync --all-packages
 uv run ruff format . && uv run ruff check .
 uv run mypy                      # strict, whole workspace
 uv run lint-imports              # dependency contracts
-uv run pytest                    # 1400+ tests: unit, conformance, security, integration
+uv run pytest                    # 1900 tests: unit, conformance, security, integration
+uv run --group docs mkdocs serve # documentation site
 uv run pytest benchmarks --benchmark-only
 ```
 
@@ -163,6 +167,11 @@ cached repeat ≈ 1.2 µs, four-field `tctx` binding ≈ 2.7 µs. Reproduce with
 above. These numbers are local CPU only; token exchange adds a network round trip to the TTS.
 The full report, including a protected FastAPI request and TTS issuance, is in
 [docs/benchmarks.md](docs/benchmarks.md).
+
+## Documentation
+
+`uv run --group docs mkdocs serve`, then open http://127.0.0.1:8000. Sources are in [`docs/`](docs).
+**Status:** no external security audit yet; see [docs/security/audit.md](docs/security/audit.md).
 
 ## License
 

@@ -62,6 +62,8 @@ plugins:
             - packages/pytrat-server/src
             - packages/pytrat-agents/src
             - packages/pytrat-cli/src
+            - packages/pytrat-redis/src
+            - packages/pytrat-otel/src
           options:
             docstring_style: google
             show_source: false
@@ -143,4 +145,6 @@ nav:
       - pytrat.django: api/django.md
       - pytrat.server: api/server.md
       - pytrat.agents: api/agents.md
+      - pytrat.redis: api/redis.md
+      - pytrat.otel: api/otel.md
       - pytrat.cli: api/cli.md

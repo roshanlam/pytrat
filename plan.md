@@ -741,5 +741,7 @@ and a 500 on bound form bodies. See `docs/compatibility.md` P28–P30.
 | M5 FastAPI | Done |
 | M6 demo / v0.1 | Done: `examples/payment-transfer` (in-process and real sockets), run in CI |
 | M7 agents | Done: `examples/agent-delegation`, property tests for monotonic attenuation |
-| M8 DX | Done except the mkdocs site; CLI, Django + example, docs in `docs/` |
-| M9 hardening | Partial: property-based fuzzing of all untrusted-input parsers and an independent review are done. **Not done:** Atheris coverage-guided fuzzing, Redis replay-store adapter, OpenTelemetry exporter, Tokenetes interoperability tests, external third-party security audit, published benchmark report beyond `benchmarks/`. |
+| M8 DX | Done: CLI, Django + example, mkdocs site (`mkdocs build --strict`, snippets type-checked) |
+| M9 hardening | Done except the external audit: Atheris fuzzing (13 harnesses, nightly), failure injection, `pytrat-redis`, `pytrat-otel`, Tokenetes interoperability (shown **not** interoperable; draft -01 vs -11, see `docs/interop/tokenetes.md`), Docker Compose over TLS, benchmark report (`docs/benchmarks.md`), and a second independent review whose findings are fixed. **Not done:** an external third-party audit, which must be commissioned; the brief is `docs/security/audit.md`. |
+
+Dependency additions in M9: `redis>=6` (pytrat-redis only), `opentelemetry-api` (pytrat-otel only); dev-only `opentelemetry-sdk`, `atheris` (Linux x86-64, `fuzz` group), `mkdocs-material` and `mkdocstrings` (`docs` group). New packages `pytrat-redis` and `pytrat-otel` depend only on core, and import-linter enforces it.

@@ -4,6 +4,7 @@ OpenTelemetry audit sink for PyTraT. Every audit event (authorization decision, 
 issuance, replacement) becomes a span event on the current span and one increment of a decision
 counter. Depends only on `opentelemetry-api`; configure the SDK and exporters in your application.
 
+<!-- --8<-- [start:usage] -->
 ```python
 from pytrat.fastapi import PyTraT
 from pytrat.otel import OpenTelemetryAuditSink
@@ -38,3 +39,4 @@ are omitted. The subject is not exported. Any string shaped like a compact JWS/J
 
 The sink never raises: telemetry failures are logged (exception type only) and counted in
 `sink.failed`; withheld attributes are counted in `sink.redacted`.
+<!-- --8<-- [end:usage] -->
