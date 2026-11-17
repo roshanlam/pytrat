@@ -1,0 +1,54 @@
+# PyTraT resource policy, schema version 1.
+#
+# Load at startup:
+#     policy_set = load_policy("policy.yaml", expected_trust_domain="payments.internal")
+# Unknown keys, duplicate keys and inconsistent settings make loading fail. A route with no
+# matching resource is denied (POLICY_NOT_FOUND).
+
+version: 1                          # only version 1 is supported
+
+# Must equal the verifier's trust domain when `expected_trust_domain` is passed to the loader.
+trust_domain: payments.internal
+
+# Optional. Ordered lowest to highest; agents.minimum_assurance must name one of these.
+assurance_levels: [unverified, low, medium, high]
+
+resources:
+  - name: transfer-execution        # policy_id in decisions and audit events; must be unique
+    path: /internal/transfer        # exact path, or a template such as /accounts/{account_id}
+    method: POST                    # upper case: GET HEAD POST PUT PATCH DELETE OPTIONS
+    require_transaction: true       # default true; a Txn-Token must be present (TOKEN_MISSING)
+    require_workload_identity: true # default true; the caller must be authenticated
+    # The token scope must contain at least one of these (SCOPE_INSUFFICIENT).
+    allowed_scopes: [payments.transfer]
+    # Optional. Omit to allow any authenticated caller (CALLER_NOT_ALLOWED).
+    allowed_callers: [payment-service]
+    # Request fields compared strictly with the same tctx paths
+    # (TRANSACTION_CONTEXT_MISSING / TRANSACTION_CONTEXT_MISMATCH).
+    bind_context: [source_account, destination_account, amount_minor, currency]
+    single_use: false               # true needs a replay store passed to the loader
+    agents:
+      enabled: true                 # when false, agentic_ctx is neither required nor rejected
+      maximum_hops: 3               # AGENT_HOP_LIMIT_EXCEEDED
+      minimum_assurance: medium     # AGENT_ASSURANCE_INSUFFICIENT
+      require_chain_replacement: true   # informational for resources; recorded, not enforced
+      require_agent_context: false  # true: AGENT_CONTEXT_MISSING without agentic_ctx
+      require_verified_agent: false # true needs an AgentDirectory (AGENT_UNVERIFIED)
+      # allowed_originators: [planner-agent]   # AGENT_NOT_ALLOWED; omit to allow any
+
+  - name: ledger-posting
+    path: /ledger/accounts/{account_id}/postings
+    method: POST
+    allowed_scopes: [payments.transfer, ledger.post]
+    allowed_callers: [payment-service]
+    # A mapping binds a request path to a differently named tctx path.
+    bind_context:
+      account_id: source_account
+      amount.minor: amount_minor
+    single_use: true                # one use per (txn, resource) until the token expires
+
+  - name: health
+    path: /internal/health
+    method: GET
+    require_transaction: false      # no token checks; scopes, binding and agents must be unset
+    require_workload_identity: true

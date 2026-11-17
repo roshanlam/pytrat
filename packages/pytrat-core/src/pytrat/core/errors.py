@@ -79,6 +79,16 @@ class TokenError(PyTraTError):
     http_status: ClassVar[int] = 401
 
 
+class AuthenticationError(PyTraTError):
+    """The calling workload could not be authenticated.
+
+    Distinct from :class:`TokenError` because a Transaction Token is never an authentication
+    credential (txn-tokens-11 §13.12).
+    """
+
+    http_status: ClassVar[int] = 401
+
+
 class AuthorizationError(PyTraTError):
     """The token is valid but does not authorize this operation."""
 

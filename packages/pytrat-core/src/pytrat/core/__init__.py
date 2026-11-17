@@ -14,7 +14,7 @@ from pytrat.core.audit import (
     MemorySink,
     NullSink,
 )
-from pytrat.core.binding import BindingResult, ContextBinding, Derived
+from pytrat.core.binding import BindingResult, BindingSpec, ContextBinding, Derived
 from pytrat.core.claims import (
     AgenticContext,
     AgentIdentity,
@@ -26,6 +26,7 @@ from pytrat.core.claims import (
 from pytrat.core.clock import Clock, FrozenClock, SystemClock
 from pytrat.core.constants import SUPPORTED_DRAFTS, TXN_TOKEN_HEADER, TXN_TOKEN_TYP
 from pytrat.core.errors import (
+    AuthenticationError,
     AuthorizationError,
     ConfigurationError,
     DependencyError,
@@ -50,8 +51,10 @@ __all__ = [
     "AssuranceOrdering",
     "AuditEvent",
     "AuditSink",
+    "AuthenticationError",
     "AuthorizationError",
     "BindingResult",
+    "BindingSpec",
     "ChainMetadata",
     "Clock",
     "ConfigurationError",
