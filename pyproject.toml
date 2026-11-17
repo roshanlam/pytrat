@@ -16,6 +16,10 @@ dev = [
     "types-PyYAML>=6.0",
     "pre-commit>=4.0",
 ]
+docs = [
+    "mkdocs-material>=9.8.1",
+    "mkdocstrings[python]>=1.0.8",
+]
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]
@@ -49,6 +53,8 @@ convention = "google"
 "benchmarks/**" = ["S101", "D", "ANN", "INP001"]
 "examples/**" = ["D", "S104", "INP001", "T201"]
 "docs/**" = ["D", "INP001"]
+# Snippets shown as "how to test your service" are pytest modules.
+"docs/snippets/try_*.py" = ["S101"]
 
 # ---------------------------------------------------------------- mypy
 [tool.mypy]
@@ -67,8 +73,10 @@ mypy_path = [
     "packages/pytrat-agents/src",
     "packages/pytrat-cli/src",
     "packages/pytrat-django/src",
+    "docs/snippets",
 ]
-files = ["packages/*/src"]
+# docs/snippets are included verbatim in the documentation; type-checking them keeps it honest.
+files = ["packages/*/src", "docs/snippets", "docs/hooks"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]

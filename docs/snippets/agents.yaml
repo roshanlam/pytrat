@@ -1,0 +1,15 @@
+agents:
+  - id: research-agent
+    name: External research agent
+    owner: partner-integrations
+    assurance_level: low
+    version: 1.8.0
+    provenance: https://registry.example/research-agent@1.8.0
+    client_id: research-agent-client   # optional: OAuth client_id of the agent
+  - id: report-agent
+    name: Quarterly report agent
+    owner: finance-platform
+    assurance_level: high
+    version: 2.4.1
+    provenance: sha256:3f1c...
+    attributes: {runtime: sidecar}     # optional, string values only
