@@ -428,6 +428,23 @@ def test_multiple_documents_are_rejected() -> None:
         load_policy_text("version: 1\n---\nversion: 1\n")
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "version: 2001-13-14\n",
+        "version: !!float x\n",
+        "version: !!int 0x\n",
+        "[" * 2000 + "]" * 2000,
+        "a: " + "{a: " * 2000 + "1" + "}" * 2000,
+    ],
+)
+def test_constructor_errors_and_deep_nesting_are_configuration_errors(text: str) -> None:
+    """Regression (found by fuzz/fuzz_policy_yaml.py): ValueError / RecursionError escaped."""
+    with pytest.raises(ConfigurationError, match="invalid YAML") as excinfo:
+        load_policy_text(text)
+    assert excinfo.value.reason is ReasonCode.POLICY_INVALID
+
+
 def test_yaml_error_without_mark_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
     import yaml
 

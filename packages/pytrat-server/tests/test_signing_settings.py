@@ -132,10 +132,29 @@ def test_create_app_from_settings_with_sqlite(config, tmp_path):
     assert app.title.startswith("PyTraT")
 
 
-@pytest.mark.parametrize("text", ["- a list", "a: [unclosed", "when: 2024-01-01\n"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "- a list",
+        "a: [unclosed",
+        "when: 2024-01-01\n",
+        # Regression (same class as fuzz/fuzz_policy_yaml.py findings): ValueError and
+        # RecursionError escaped load_settings.
+        "when: 2024-13-01\n",
+        "a: !!float x\n",
+        "a: " + "[" * 2000 + "]" * 2000,
+    ],
+)
 def test_load_settings_rejects_bad_documents(tmp_path, text):
     path = tmp_path / "bad.yaml"
     path.write_text(text)
+    with pytest.raises(ConfigurationError):
+        load_settings(path)
+
+
+def test_load_settings_rejects_undecodable_file(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_bytes(b"\xff\xfe")
     with pytest.raises(ConfigurationError):
         load_settings(path)
 

@@ -130,6 +130,27 @@ def test_yaml_store_rejects_invalid_documents(tmp_path: Path, document: str) -> 
         YamlAgentStore(path)
 
 
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"\xff\xfe",
+        b"agents: [!!int 0x]\n",
+        b"agents:\n  - version: 2001-13-14\n",
+        b"[" * 2000 + b"]" * 2000,
+    ],
+)
+def test_yaml_store_malformed_content_is_configuration_error(
+    tmp_path: Path, content: bytes
+) -> None:
+    """Regression (found by fuzz/fuzz_agent_registry.py): UnicodeDecodeError, ValueError and
+    RecursionError escaped the loader instead of a configuration error."""
+    path = tmp_path / "agents.yaml"
+    path.write_bytes(content)
+    with pytest.raises(ConfigurationError) as excinfo:
+        YamlAgentStore(path)
+    assert excinfo.value.reason is ReasonCode.POLICY_INVALID
+
+
 def test_yaml_store_unreadable_file_is_dependency_error(tmp_path: Path) -> None:
     with pytest.raises(DependencyError) as excinfo:
         YamlAgentStore(tmp_path / "missing.yaml")

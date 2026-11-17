@@ -318,11 +318,15 @@ def load_settings(path: str | Path) -> TtsSettings:
     config_path = Path(path).resolve()
     try:
         raw_text = config_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        raise ConfigurationError("configuration file is not valid UTF-8") from None
     except OSError:
         raise ConfigurationError("configuration file could not be read") from None
     try:
         raw_document = yaml.safe_load(raw_text)
-    except yaml.YAMLError:
+    except (yaml.YAMLError, ValueError, RecursionError):
+        # PyYAML's constructors raise plain ValueError for values such as 2024-13-01, and deep
+        # nesting exhausts its recursive composer.
         raise ConfigurationError("configuration file is not valid YAML") from None
     if not isinstance(raw_document, Mapping):
         raise ConfigurationError("configuration file must contain a mapping")

@@ -100,7 +100,9 @@ def _parse_yaml(text: str, label: str) -> object:
         mark = exc.problem_mark or exc.context_mark
         where = f" at line {mark.line + 1}, column {mark.column + 1}" if mark else ""
         raise ConfigurationError(f"{label}: invalid YAML{where}") from None
-    except yaml.YAMLError:
+    except (yaml.YAMLError, ValueError, RecursionError):
+        # PyYAML's constructors raise plain ValueError for values such as 2001-13-14 or
+        # "!!float x", and deep nesting exhausts its recursive composer.
         raise ConfigurationError(f"{label}: invalid YAML") from None
 
 
