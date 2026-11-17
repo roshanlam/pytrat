@@ -15,6 +15,7 @@ dev = [
     "import-linter>=2.1",
     "types-PyYAML>=6.0",
     "pre-commit>=4.0",
+    "opentelemetry-sdk>=1.27",  # pytrat-otel tests: in-memory span exporter and metric reader
 ]
 
 # ---------------------------------------------------------------- ruff
@@ -67,6 +68,7 @@ mypy_path = [
     "packages/pytrat-agents/src",
     "packages/pytrat-cli/src",
     "packages/pytrat-django/src",
+    "packages/pytrat-otel/src",
 ]
 files = ["packages/*/src"]
 plugins = ["pydantic.mypy"]
