@@ -1,1 +1,0 @@
-{"keys": [{"kty": "EC", "crv": "P-256", "x": "QXXqH6Bwz6NzzbLA4GExffygjy_WdCxGvkPbtoJYITI", "y": "M0_wq22OOnFG6I2dikAueUJbS56lFIu6CcYThAk9VuU", "kid": "seed-es256", "alg": "ES256", "use": "enc"}]}

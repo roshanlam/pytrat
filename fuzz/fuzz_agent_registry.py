@@ -70,6 +70,8 @@ def seeds() -> Iterator[bytes]:
     # UnicodeDecodeError / ValueError / RecursionError.
     yield b"\xff\xfe"
     yield b"agents: [!!int 0x]\n"
+    yield b"agents: [!!int ]\n"  # regression (Atheris): IndexError from the constructor
+    yield b"agents: [!!bool x, !!timestamp x]\n"
     yield b"[" * 700 + b"]" * 700
     yield b"agents: " + b"[" * 32 + b"]" * 32
 

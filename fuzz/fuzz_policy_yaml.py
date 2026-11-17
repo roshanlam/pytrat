@@ -60,6 +60,8 @@ def seeds() -> Iterator[bytes]:
     # Regression: constructor errors and deep nesting escaped as ValueError / RecursionError.
     yield b"version: 2001-13-14\n"
     yield b"version: !!float x\n"
+    yield b"version: !!int \n"
+    yield b"version: !!bool x\n"
     yield b"[" * 700 + b"]" * 700
     yield b"version: !!binary AAAA\n"
     yield b"[" * 32 + b"]" * 32
