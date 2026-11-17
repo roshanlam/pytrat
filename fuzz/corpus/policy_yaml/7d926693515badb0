@@ -1,0 +1,21 @@
+version: 1
+trust_domain: payments.internal
+assurance_levels: [unverified, low, medium, high]
+resources:
+  - name: transfer
+    path: /internal/transfer
+    method: POST
+    allowed_scopes: [payments.transfer]
+    allowed_callers: [payment-service]
+    bind_context: [source_account, amount_minor]
+    agents: {enabled: true, maximum_hops: 3, minimum_assurance: medium}
+  - name: posting
+    path: /ledger/accounts/{account_id}/postings
+    method: POST
+    allowed_scopes: [ledger.post]
+    bind_context: {account_id: source_account, amount.minor: amount_minor}
+    single_use: true
+  - name: transfer
+    path: /internal/health
+    method: GET
+    require_transaction: false

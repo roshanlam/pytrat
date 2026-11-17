@@ -48,6 +48,9 @@ __all__ = ["TokenEndpoint", "TokenResponse", "TtsComponents"]
 _logger = logging.getLogger(__name__)
 
 _SERVICE: Final = "pytrat-tts"
+_INTERNAL_ERROR: Final = OAuthError(
+    OAuthErrorCode.SERVER_ERROR, "internal error", ReasonCode.DEPENDENCY_UNAVAILABLE
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +173,12 @@ class TokenEndpoint:
             error = translate(exc, OAuthErrorCode.SERVER_ERROR)
             await self._record_rejection(error, progress)
             raise error from None
+        except Exception:
+            # A collaborator broke its contract (e.g. an Agent Attribute Store raising a driver
+            # error instead of DependencyError). The request is refused by the app's last line
+            # of defence; record that refusal so every outcome reaches the issuance log.
+            await self._record_rejection(_INTERNAL_ERROR, progress)
+            raise
 
     async def _issue(
         self, request: TokenRequest, workload: WorkloadIdentity, progress: _Progress

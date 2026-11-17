@@ -199,6 +199,24 @@ class TestJson:
         with pytest.raises(ValueError, match="Infinity"):
             strict_loads('{"a": Infinity}')
 
+    @pytest.mark.parametrize("raw", ["1e400", '{"amount": -1e999}', "[1E309]"])
+    def test_overflowing_number_is_not_decoded_to_infinity(self, raw: str) -> None:
+        """Regression (found by fuzz/fuzz_strict_json.py): ``1e400`` decoded to ``inf``."""
+        with pytest.raises(ValueError, match="finite"):
+            strict_loads(raw)
+
+    def test_excessive_nesting_is_a_value_error(self) -> None:
+        """Regression (found by fuzz/fuzz_strict_json.py): RecursionError escaped."""
+        with pytest.raises(ValueError, match="nesting"):
+            strict_loads("[" * 200_000 + "]" * 200_000)
+
+    def test_freeze_rejects_excessive_nesting(self) -> None:
+        deep: object = 1
+        for _ in range(65):
+            deep = [deep]
+        with pytest.raises(TypeError, match="nesting"):
+            freeze(deep)
+
     def test_freeze_thaw(self) -> None:
         frozen = freeze({"a": [1, {"b": None}]})
         assert thaw(frozen) == {"a": [1, {"b": None}]}

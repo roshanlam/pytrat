@@ -193,6 +193,8 @@ class YamlAgentStore(InMemoryAgentStore):
         """
         try:
             raw_text = Path(path).read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            raise ConfigurationError("agent store file is not valid UTF-8") from None
         except OSError as exc:
             raise DependencyError("agent store file could not be read") from exc
         super().__init__(_parse_yaml(raw_text), ordering=ordering)
@@ -201,8 +203,11 @@ class YamlAgentStore(InMemoryAgentStore):
 def _parse_yaml(raw_text: str) -> list[AgentRecord]:
     try:
         raw_document = yaml.safe_load(raw_text)
-    except yaml.YAMLError as exc:
-        raise ConfigurationError("agent store file is not valid YAML") from exc
+    except Exception:  # noqa: BLE001 - re-raised as a configuration error, never swallowed
+        # PyYAML's constructors raise ValueError, IndexError, KeyError or AttributeError for
+        # tagged scalars such as "!!int", "!!bool x" or 2001-13-14, and deep nesting exhausts its
+        # recursive composer (RecursionError). Any of them means the document is invalid.
+        raise ConfigurationError("agent store file is not valid YAML") from None
     try:
         document = _YamlDocument.model_validate(raw_document)
     except ValidationError as exc:

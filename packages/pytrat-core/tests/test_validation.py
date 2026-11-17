@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import timedelta
 
 import pytest
@@ -109,6 +110,14 @@ class TestRejectsShape:
 
     def test_payload_nan(self, factory, verifier) -> None:
         assert reason(verifier, factory.mint_payload(b'{"iat":NaN}')) is ReasonCode.TOKEN_MALFORMED
+
+    @pytest.mark.parametrize("claim", ["tctx", "rctx", "act"])
+    def test_deeply_nested_object_claim_is_invalid(self, factory, verifier, claim: str) -> None:
+        """Regression (found by fuzz/fuzz_verify_signed.py): RecursionError escaped verify."""
+        payload = factory.claims(**{claim: None})
+        body = json.dumps(payload)[:-1] + f', "{claim}": {{"a": ' + "[" * 600 + "]" * 600 + "}}"
+        token = factory.mint_payload(body.encode())
+        assert reason(verifier, token) is ReasonCode.CLAIM_INVALID
 
     def test_empty_kid(self, factory, verifier) -> None:
         assert reason(verifier, factory.mint(headers={"kid": ""})) is ReasonCode.TOKEN_MALFORMED

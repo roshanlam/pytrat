@@ -21,3 +21,7 @@ examples/**/keys/
 .env
 .DS_Store
 .claude/worktrees/
+.fuzz-work/
+crash-*
+leak-*
+timeout-*

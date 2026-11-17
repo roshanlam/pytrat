@@ -176,6 +176,8 @@ def load_public_jwk(jwk: Mapping[str, object]) -> tuple[PublicKey, frozenset[str
         ConfigurationError: If the JWK is private, symmetric, weak, malformed or not for signing.
     """
     kty = jwk.get("kty")
+    if not isinstance(kty, str):
+        raise ConfigurationError("JWK 'kty' must be a string", ReasonCode.KEY_UNKNOWN)
     if kty == "oct":
         raise ConfigurationError("symmetric (oct) keys are not accepted", ReasonCode.KEY_UNKNOWN)
     if _PRIVATE_JWK_MEMBERS.intersection(jwk):

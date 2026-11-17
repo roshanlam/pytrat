@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
+from typing import Final
 
 type JsonObject = Mapping[str, object]
 """A JSON object. Values are str, int, float, bool, None, tuples or further JsonObjects."""
+
+# PyTraT profile: frozen JSON values (claim objects such as tctx, rctx, act) nest at most this
+# deep. The bound is far above any legitimate claim and well below the interpreter's recursion
+# limit, so excessive nesting is a deterministic validation failure, never a RecursionError.
+MAX_FREEZE_DEPTH: Final = 64
 
 
 class DuplicateKeyError(ValueError):
@@ -28,13 +35,32 @@ def _reject_constant(name: str) -> object:
     raise ValueError(f"non-standard JSON constant {name}")
 
 
+def _finite_float(literal: str) -> float:
+    value = float(literal)
+    # A literal such as 1e400 overflows to infinity, which is just Infinity spelled differently.
+    if not math.isfinite(value):
+        raise ValueError("number is not finite")
+    return value
+
+
 def strict_loads(data: bytes | str) -> object:
-    """Decode JSON, rejecting duplicate keys and ``NaN``/``Infinity``.
+    """Decode JSON, rejecting duplicate keys and non-finite numbers.
+
+    ``NaN``, ``Infinity`` and literals that overflow to infinity (``1e400``) are rejected.
 
     Raises:
-        ValueError: If the input is not strict JSON (``DuplicateKeyError`` for duplicate keys).
+        ValueError: If the input is not strict JSON (``DuplicateKeyError`` for duplicate keys),
+            including nesting too deep for the decoder.
     """
-    return json.loads(data, object_pairs_hook=_reject_duplicates, parse_constant=_reject_constant)
+    try:
+        return json.loads(
+            data,
+            object_pairs_hook=_reject_duplicates,
+            parse_constant=_reject_constant,
+            parse_float=_finite_float,
+        )
+    except RecursionError:
+        raise ValueError("JSON nesting is too deep") from None
 
 
 def compact_dumps(value: object) -> bytes:
@@ -48,19 +74,26 @@ def freeze(value: object) -> object:
     """Recursively convert dicts to read-only mappings and lists to tuples.
 
     Raises:
-        TypeError: If ``value`` contains a non-JSON type.
+        TypeError: If ``value`` contains a non-JSON type or nests deeper than
+            :data:`MAX_FREEZE_DEPTH`.
     """
+    return _freeze(value, 0)
+
+
+def _freeze(value: object, depth: int) -> object:
     if value is None or isinstance(value, str | bool | int | float):
         return value
+    if depth >= MAX_FREEZE_DEPTH:
+        raise TypeError("JSON nesting is too deep")
     if isinstance(value, Mapping):
         frozen: dict[str, object] = {}
         for key, item in value.items():
             if not isinstance(key, str):
                 raise TypeError("JSON object keys must be strings")
-            frozen[key] = freeze(item)
+            frozen[key] = _freeze(item, depth + 1)
         return MappingProxyType(frozen)
     if isinstance(value, Sequence) and not isinstance(value, bytes | bytearray):
-        return tuple(freeze(item) for item in value)
+        return tuple(_freeze(item, depth + 1) for item in value)
     raise TypeError(f"unsupported JSON type {type(value).__name__}")
 
 
