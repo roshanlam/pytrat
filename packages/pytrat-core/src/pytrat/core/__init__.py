@@ -3,6 +3,7 @@
 This package has no web-framework, HTTP-client or agent-profile dependencies.
 """
 
+from pytrat.core._json import DuplicateKeyError, strict_loads
 from pytrat.core.assurance import AssuranceOrdering
 from pytrat.core.audit import (
     AgentAuditContext,
@@ -61,6 +62,7 @@ __all__ = [
     "ContextBinding",
     "DependencyError",
     "Derived",
+    "DuplicateKeyError",
     "EventType",
     "FrozenClock",
     "InMemoryReplayStore",
@@ -86,6 +88,7 @@ __all__ = [
     "VerifierSettings",
     "parse_claims",
     "replay_key",
+    "strict_loads",
     "token_digest",
     "verify_jws",
 ]

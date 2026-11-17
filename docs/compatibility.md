@@ -36,6 +36,10 @@ The vendored text of both drafts is in [`docs/spec/`](spec/). Programmatic acces
 | P10 | Duplicate JSON member names | Rejected in JOSE headers, JWT payloads, JWKS documents and token-exchange responses. |
 | P11 | `aud` may be an array under RFC 7519 | A Txn-Token is valid in exactly one Trust Domain, so an array `aud` is rejected. |
 | P12 | Nested member missing inside a present claim | Reported as `CLAIM_INVALID` (the claim is present but malformed), not `CLAIM_MISSING`. |
+| P13 | Client-side handling of exchange responses | Success responses must be `application/json` and ≤ 64 KiB; error text echoed by the TTS is redacted of anything token-shaped. Every issued token is verified locally before use, and a replacement is rejected client-side if it changed `txn`, `sub`, `aud`, `act` or the agent `originator`, widened scope, or lowered `hop_count`. |
+| P14 | Transport security for the TTS and JWKS endpoints | HTTPS required; plain HTTP only for `localhost`/loopback when explicitly enabled for development. An empty JWKS counts as a failed refresh. |
+| P15 | RFC 7523 client assertions | Lifetime ≤ 60 s from the client; the reference TTS accepts ≤ 5 min and enforces single-use `jti`. |
+| P16 | Outbound propagation | Exact-origin allowlist checked before connecting and again on every request an auth flow yields; redirects never followed; the token is never placed in `Authorization`. |
 
 ## Known deviations and gaps
 
