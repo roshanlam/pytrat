@@ -162,6 +162,8 @@ def test_unknown_parameters_ignored():
         '"s"',
         '{"a":1,"a":2}',
         '{"a": NaN}',
+        # Regression (found by fuzz/fuzz_strict_json.py): decoded to inf, later unsignable.
+        '{"a": 1e400}',
         "{",
         "[" * 50 + "]" * 50,
         '{"a":' * 20 + "1" + "}" * 20,

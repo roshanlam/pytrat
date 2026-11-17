@@ -5,7 +5,13 @@ import json
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
-from pytrat.core import ConfigurationError, StaticKeySet, TokenError, VerificationKey
+from pytrat.core import (
+    ConfigurationError,
+    ReasonCode,
+    StaticKeySet,
+    TokenError,
+    VerificationKey,
+)
 from pytrat.core.crypto import (
     algorithms_for_key,
     generate_private_key,
@@ -61,10 +67,25 @@ class TestStaticKeySet:
         with pytest.raises(ConfigurationError):
             StaticKeySet.from_jwks(document)
 
+    @pytest.mark.parametrize("kty", [["EC"], {"EC": 1}, None, 1])
+    def test_non_string_kty_is_a_configuration_error(self, kty: object) -> None:
+        """Regression (found by fuzz/fuzz_jwks.py under Atheris): an unhashable ``kty`` raised
+        TypeError from the set-membership check."""
+        jwk = {**generate_test_key("ES256", kid="k").jwk(), "kty": kty}
+        with pytest.raises(ConfigurationError) as excinfo:
+            StaticKeySet.from_jwks({"keys": [jwk]})
+        assert excinfo.value.reason is ReasonCode.KEY_UNKNOWN
+
     @pytest.mark.parametrize("data", [b"not json", b"[]", b"{" + b" " * 300_000 + b"}"])
     def test_invalid_bytes(self, data: bytes) -> None:
         with pytest.raises(ConfigurationError):
             StaticKeySet.from_jwks_bytes(data)
+
+    def test_deeply_nested_document_is_a_configuration_error(self) -> None:
+        """Regression (found by fuzz/fuzz_strict_json.py): RecursionError escaped the parser."""
+        with pytest.raises(ConfigurationError) as excinfo:
+            StaticKeySet.from_jwks_bytes(b"[" * 120_000 + b"]" * 120_000)
+        assert excinfo.value.reason is ReasonCode.KEY_UNKNOWN
 
     def test_verification_key_repr_and_restriction(self) -> None:
         key = generate_test_key("PS256")
