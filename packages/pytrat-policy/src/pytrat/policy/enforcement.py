@@ -15,6 +15,7 @@ Pipeline (first failure wins):
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
@@ -22,6 +23,7 @@ from pytrat.core import (
     AuditEvent,
     AuditSink,
     BindingResult,
+    DependencyError,
     EventType,
     InboundRequest,
     JsonObject,
@@ -39,6 +41,8 @@ from pytrat.core import (
 from pytrat.core.constants import TXN_TOKEN_HEADER
 from pytrat.policy.compiler import CompiledPolicy
 from pytrat.policy.evaluator import AuthorizationRequest
+
+_logger = logging.getLogger(__name__)
 
 type VerifyFunction = Callable[[str], VerifiedToken]
 """Turns a raw token into a :class:`VerifiedToken` or raises ``TokenError``."""
@@ -133,7 +137,8 @@ class TransactionEnforcer:
             TokenError: Missing, repeated or invalid ``Txn-Token`` (HTTP 401).
             AuthenticationError: Invalid or missing workload credentials (HTTP 401).
             AuthorizationError: Policy denial (HTTP 403).
-            DependencyError: A required dependency is unavailable (HTTP 503).
+            DependencyError: A required dependency is unavailable, or the audit sink failed to
+                record a grant (HTTP 503). A sink failure never changes a denial's reason.
         """
         token: VerifiedToken | None = None
         if policy.require_transaction:
@@ -196,15 +201,20 @@ class TransactionEnforcer:
             detail["bound_fields"] = ",".join(binding.checked)
             if binding.transforms:
                 detail["transforms"] = ",".join(binding.transforms)
-        self._audit.emit(
-            AuditEvent.for_claims(
-                event_type,
-                service=self._service,
-                claims=token.claims if token else None,
-                token_digest=token.digest if token else None,
-                policy_id=policy.policy_id,
-                reason_code=error.reason if error else None,
-                caller_workload=caller.id if caller else None,
-                detail=detail,
-            )
+        event = AuditEvent.for_claims(
+            event_type,
+            service=self._service,
+            claims=token.claims if token else None,
+            token_digest=token.digest if token else None,
+            policy_id=policy.policy_id,
+            reason_code=error.reason if error else None,
+            caller_workload=caller.id if caller else None,
+            detail=detail,
         )
+        try:
+            self._audit.emit(event)
+        except Exception as exc:  # noqa: BLE001 - a sink breaking its no-raise contract must not decide the outcome
+            _logger.error("audit sink failed: %s", type(exc).__name__)  # noqa: TRY400 - the exception text may echo event data
+            if error is None:
+                # Fail closed: a grant that cannot be audited is refused. A denial keeps its reason.
+                raise DependencyError("audit sink is unavailable") from None

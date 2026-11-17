@@ -675,21 +675,27 @@ async def call(app: FastAPI, pytrat: PyTraT, token: str) -> httpx.Response:
 
 
 @pytest.mark.parametrize(
-    "claims",
+    ("claims", "status", "reason"),
     [
-        pytest.param({}, id="would-be-granted"),
-        pytest.param({"scope": "payments.read"}, id="scope-denied"),
-        pytest.param({"aud": "other.domain"}, id="token-rejected"),
+        pytest.param({}, 503, ReasonCode.DEPENDENCY_UNAVAILABLE, id="would-be-granted"),
+        pytest.param(
+            {"scope": "payments.read"}, 403, ReasonCode.SCOPE_INSUFFICIENT, id="scope-denied"
+        ),
+        pytest.param(
+            {"aud": "other.domain"}, 401, ReasonCode.TRUST_DOMAIN_MISMATCH, id="token-rejected"
+        ),
     ],
 )
 async def test_resource_sink_failure_never_turns_into_an_allow(
-    resource_kit: TokenFactory, claims: dict[str, object]
+    resource_kit: TokenFactory, claims: dict[str, object], status: int, reason: ReasonCode
 ) -> None:
+    """A broken sink keeps a denial's own reason; an unaudited grant is refused with 503."""
     sink = FlakySink()
     sink.broken = True
     app, pytrat, calls = resource_app(resource_kit, sink)
     response = await call(app, pytrat, resource_kit.mint(**claims))
-    assert response.status_code >= 400
+    assert response.status_code == status
+    assert reason_of(response) == reason
     assert calls == []
 
 
