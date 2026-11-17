@@ -65,8 +65,11 @@ def _verifier(lab: Lab) -> TokenVerifier:
     return TokenVerifier(settings, lab.tts_keys())
 
 
-def _http(transport: httpx.AsyncBaseTransport | None) -> httpx.AsyncClient:
-    return httpx.AsyncClient(transport=transport, follow_redirects=False, timeout=5.0)
+def _http(lab: Lab, transport: httpx.AsyncBaseTransport | None) -> httpx.AsyncClient:
+    # Outbound TLS trusts exactly what the lab says (the demo CA under Docker Compose).
+    return httpx.AsyncClient(
+        transport=transport, verify=lab.tls_verify(), follow_redirects=False, timeout=5.0
+    )
 
 
 def _forward(response: httpx.Response) -> JSONResponse:
@@ -97,12 +100,12 @@ def create_gateway(lab: Lab, transport: httpx.AsyncBaseTransport | None = None) 
             token_endpoint=urls.token_endpoint,
         ),
         _verifier(lab),
-        http_client=_http(transport),
+        http_client=_http(lab, transport),
         allow_insecure_localhost=urls.insecure_localhost,
     )
     payments = AsyncTransactionClient(
         [urls.payment],
-        http_client=_http(transport),
+        http_client=_http(lab, transport),
         auth=WorkloadJwtAuth(
             workload_id="api-gateway",
             private_key_path=lab.pem("api-gateway"),
@@ -163,7 +166,7 @@ def create_payment(
     )
     ledger = AsyncTransactionClient(
         [urls.ledger],
-        http_client=_http(transport),
+        http_client=_http(lab, transport),
         auth=WorkloadJwtAuth(
             workload_id="payment-service",
             private_key_path=lab.pem("payment-service"),

@@ -1,0 +1,164 @@
+# Payment-transfer demo on Docker Compose, every hop over verified TLS.
+#
+#   cd examples/payment-transfer/compose
+#   docker compose up --build -d --wait               # honest stack
+#   docker compose run --rm client                     # $100 transfer -> 201
+#   export PYTRAT_DEMO_COMPROMISED=1                   # keep it set for the next two commands:
+#   docker compose up -d --wait payment                #   swap in the tampering payment service
+#   docker compose run --rm client                     # -> 403 TRANSACTION_CONTEXT_MISMATCH
+#   docker compose logs ledger                         # the ledger's audit event
+#   docker compose down -v; unset PYTRAT_DEMO_COMPROMISED   # tear down, destroy all key material
+#
+# (`run` starts dependencies; without the variable it would recreate the honest payment service.)
+#
+# Or run everything (and the assertions) with:  python smoke.py
+#
+# Trust wiring: `init` generates an ephemeral demo CA (its private key is never written), one TLS
+# certificate per service whose SAN is the compose service name, and the JWT keys. Every outbound
+# client trusts only that CA (no system roots) and checks host names. Each service mounts the
+# public volume read-only and only its own private volume.
+
+name: pytrat-payment-demo
+
+x-image: &image
+  image: pytrat-payment-demo:local
+  pull_policy: never  # built locally by the init service
+  read_only: true
+  tmpfs:
+    - /tmp:size=16m,mode=1777
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  user: "10001:10001"
+
+x-urls: &urls
+  PYTRAT_DEMO_TTS_URL: https://tts:8443
+  PYTRAT_DEMO_GATEWAY_URL: https://gateway:8443
+  PYTRAT_DEMO_PAYMENT_URL: https://payment:8443
+  PYTRAT_DEMO_LEDGER_URL: https://ledger:8443
+
+x-healthcheck: &healthcheck
+  interval: 2s
+  timeout: 5s
+  retries: 30
+  start_period: 5s
+
+services:
+  init:
+    <<: *image
+    build:
+      context: ../../..
+      dockerfile: examples/payment-transfer/compose/Dockerfile
+    command: ["python", "-m", "payment_demo.container", "init"]
+    environment:
+      <<: *urls
+    volumes:
+      - public:/pki/public
+      - tts-private:/pki/out/tts
+      - gateway-private:/pki/out/gateway
+      - payment-private:/pki/out/payment
+      - ledger-private:/pki/out/ledger
+      - client-private:/pki/out/client
+    restart: "no"
+
+  tts:
+    <<: *image
+    command: [uvicorn, "payment_demo.container:tts_app", --factory, --host, 0.0.0.0, --port, "8443",
+              --ssl-keyfile, /pki/private/tls.key, --ssl-certfile, /pki/private/tls.crt,
+              --no-server-header]
+    environment:
+      <<: *urls
+    volumes:
+      - public:/pki/public:ro
+      - tts-private:/pki/private:ro
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "python", "-m", "payment_demo.container", "healthcheck", "https://tts:8443/healthz"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  ledger:
+    <<: *image
+    command: [uvicorn, "payment_demo.container:ledger_app", --factory, --host, 0.0.0.0, --port, "8443",
+              --ssl-keyfile, /pki/private/tls.key, --ssl-certfile, /pki/private/tls.crt,
+              --no-server-header]
+    environment:
+      <<: *urls
+    volumes:
+      - public:/pki/public:ro
+      - ledger-private:/pki/private:ro
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "python", "-m", "payment_demo.container", "healthcheck", "https://ledger:8443/"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  payment:
+    <<: *image
+    command: [uvicorn, "payment_demo.container:payment_app", --factory, --host, 0.0.0.0, --port, "8443",
+              --ssl-keyfile, /pki/private/tls.key, --ssl-certfile, /pki/private/tls.crt,
+              --no-server-header]
+    environment:
+      <<: *urls
+      # "1" runs the compromised variant that rewrites $100 to $9,000 before calling the ledger.
+      PYTRAT_DEMO_COMPROMISED: ${PYTRAT_DEMO_COMPROMISED:-0}
+    volumes:
+      - public:/pki/public:ro
+      - payment-private:/pki/private:ro
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "python", "-m", "payment_demo.container", "healthcheck", "https://payment:8443/"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      ledger:
+        condition: service_healthy
+
+  gateway:
+    <<: *image
+    command: [uvicorn, "payment_demo.container:gateway_app", --factory, --host, 0.0.0.0, --port, "8443",
+              --ssl-keyfile, /pki/private/tls.key, --ssl-certfile, /pki/private/tls.crt,
+              --no-server-header]
+    environment:
+      <<: *urls
+    volumes:
+      - public:/pki/public:ro
+      - gateway-private:/pki/private:ro
+    ports:
+      # The only published port, bound to the host's loopback interface.
+      - "127.0.0.1:${PYTRAT_DEMO_GATEWAY_PORT:-8443}:8443"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "python", "-m", "payment_demo.container", "healthcheck", "https://gateway:8443/"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      tts:
+        condition: service_healthy
+      payment:
+        condition: service_healthy
+
+  # The logged-in user: `docker compose run --rm client [--amount-minor N]`. Holds the demo
+  # identity provider's key so it can mint the user's access token.
+  client:
+    <<: *image
+    profiles: [client]
+    entrypoint: ["python", "-m", "payment_demo.container", "client"]
+    command: []
+    environment:
+      <<: *urls
+    volumes:
+      - public:/pki/public:ro
+      - client-private:/pki/private:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+volumes:
+  public:
+  tts-private:
+  gateway-private:
+  payment-private:
+  ledger-private:
+  client-private:
