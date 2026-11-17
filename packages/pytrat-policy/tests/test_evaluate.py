@@ -16,6 +16,7 @@ from pytrat.core import (
     TokenError,
     VerifiedToken,
 )
+from pytrat.core.validation import MAX_LEEWAY
 from pytrat.policy import (
     AgentRequirements,
     AuthorizationRequest,
@@ -411,6 +412,17 @@ def test_replayed_single_use_token_is_denied_replay_detected(factory: object, mi
     policy = transfer_policy(single_use=True, replay_store=store)
     token = mint()
     assert policy.evaluate(request(token)).allowed
+    assert_denied(policy, request(token), ReasonCode.REPLAY_DETECTED)
+
+
+def test_replay_within_exp_leeway_window_is_denied(mint: Mint) -> None:
+    """A verifier accepts a token until ``exp + leeway``; the use record must outlive that."""
+    clock = FrozenClock()
+    store = InMemoryReplayStore(clock=clock)
+    policy = transfer_policy(single_use=True, replay_store=store)
+    token = mint()
+    assert policy.evaluate(request(token)).allowed
+    clock.set(token.claims.exp + MAX_LEEWAY.total_seconds() - 1)
     assert_denied(policy, request(token), ReasonCode.REPLAY_DETECTED)
 
 

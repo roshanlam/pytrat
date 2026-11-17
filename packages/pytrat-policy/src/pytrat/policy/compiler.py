@@ -37,7 +37,7 @@ from pytrat.core.errors import (
 )
 from pytrat.core.replay import ReplayStore, replay_key
 from pytrat.core.scopes import Scope
-from pytrat.core.validation import VerifiedToken
+from pytrat.core.validation import MAX_LEEWAY, VerifiedToken
 from pytrat.policy._errors import PolicyFieldError
 from pytrat.policy.evaluator import AgentDirectory, AuthorizationRequest, Decision, PolicySet
 from pytrat.policy.model import AgentsModel, PolicyDocument, ResourceModel
@@ -366,8 +366,10 @@ class CompiledPolicy:
             return
         if self.replay_store is None:
             raise DependencyError("replay store is not configured")
-        # PyTraT profile P8: one use per (txn, policy) until the token expires.
-        self.replay_store.record_once(replay_key(claims.txn, self.policy_id), float(claims.exp))
+        # PyTraT profile P8: one use per (txn, policy) until the token expires. A verifier accepts
+        # the token until ``exp + leeway``, so the record outlives the largest allowed leeway.
+        retain_until = float(claims.exp) + MAX_LEEWAY.total_seconds()
+        self.replay_store.record_once(replay_key(claims.txn, self.policy_id), retain_until)
 
 
 def _require_token(token: VerifiedToken | None) -> VerifiedToken:

@@ -32,7 +32,8 @@ from pytrat.core.jws import verify_jws
 from pytrat.core.keys import KeyProvider, VerificationKey
 from pytrat.core.secret import SecretToken
 
-_MAX_LEEWAY: Final = timedelta(seconds=60)
+# The largest clock-skew leeway a verifier may be configured with; replay records outlive it.
+MAX_LEEWAY: Final = timedelta(seconds=60)
 _SEAL: Final = object()
 
 
@@ -71,7 +72,7 @@ class VerifierSettings:
             raise ConfigurationError(f"unsupported algorithms {sorted(unknown)}")
         if self.max_lifetime <= timedelta(0):
             raise ConfigurationError("max_lifetime must be positive")
-        if not timedelta(0) <= self.leeway <= _MAX_LEEWAY:
+        if not timedelta(0) <= self.leeway <= MAX_LEEWAY:
             raise ConfigurationError("leeway must be between 0 and 60 seconds")
         if self.max_token_bytes < 256:
             raise ConfigurationError("max_token_bytes is unreasonably small")
