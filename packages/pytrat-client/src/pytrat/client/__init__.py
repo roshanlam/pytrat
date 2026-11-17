@@ -34,6 +34,7 @@ from pytrat.client.jwks import (
     verify_with_refresh_async,
 )
 from pytrat.client.token_client import AsyncTransactionTokenClient, TransactionTokenClient
+from pytrat.client.workload_auth import WorkloadJwtAuth
 
 __all__ = [
     "AsyncJwksRefresher",
@@ -52,6 +53,7 @@ __all__ = [
     "TransactionClient",
     "TransactionTokenClient",
     "WorkloadCredential",
+    "WorkloadJwtAuth",
     "bind_transaction",
     "build_issue_request",
     "build_replacement_request",

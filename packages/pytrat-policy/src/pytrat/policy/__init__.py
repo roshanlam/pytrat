@@ -16,6 +16,7 @@ from pytrat.policy.compiler import (
     CompiledPolicy,
     compile_policy,
 )
+from pytrat.policy.enforcement import Transaction, TransactionEnforcer, VerifyFunction
 from pytrat.policy.evaluator import (
     HTTP_METHODS,
     AgentDirectory,
@@ -44,6 +45,9 @@ __all__ = [
     "PolicySource",
     "ResourceModel",
     "RouteTemplate",
+    "Transaction",
+    "TransactionEnforcer",
+    "VerifyFunction",
     "compile_policy",
     "load_policy",
     "load_policy_text",
