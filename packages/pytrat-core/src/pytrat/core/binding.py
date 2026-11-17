@@ -4,7 +4,7 @@ A Transaction Token's ``tctx`` records what was authorized ("transfer 10000 USD 
 account-B"). A :class:`ContextBinding` checks that the operation actually being performed matches
 it, so a compromised intermediary cannot silently change the parameters.
 
-Comparison is strict and canonical (CLAUDE.md invariant 9):
+Comparison is strict and canonical:
 
 * types must match exactly: ``True != 1``, ``1 != "1"``;
 * floats are rejected in bound positions, so money must be integer minor units;

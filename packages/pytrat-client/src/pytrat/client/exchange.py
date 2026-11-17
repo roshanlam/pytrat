@@ -248,7 +248,7 @@ def build_replacement_request(
 def check_replacement(current: VerifiedToken, replacement: VerifiedToken) -> None:
     """Defence in depth: confirm a TTS-issued replacement only attenuates ``current``.
 
-    CLAUDE.md invariant 5 / txn-tokens-11 §13.15: ``txn``, ``sub``, ``aud`` and ``act`` never change
+    txn-tokens-11 §13.15: ``txn``, ``sub``, ``aud`` and ``act`` never change
     and scope never widens. Under the agent profile, ``originator`` never changes and ``hop_count``
     never falls.
 
@@ -314,8 +314,7 @@ def response_too_large() -> ExchangeError:
 
 
 def _error_response(status: int, body: bytes, secrets: tuple[SecretToken, ...]) -> ExchangeError:
-    # RFC 6749 §5.2: error responses are JSON objects with `error` and optional
-    # `error_description`.
+    # RFC 6749 §5.2: a JSON object with `error` and optional `error_description`.
     document = _strict_json_object(body) or {}
     raw_error = document.get("error")
     oauth_error = None

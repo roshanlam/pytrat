@@ -322,7 +322,7 @@ async def test_unprepared_route_fails_closed(kit: Kit) -> None:
 
 
 async def test_form_body_cannot_be_bound_and_is_refused_at_startup(kit: Kit) -> None:
-    """Security review #4: a bound form body used to 500 on every request; now refused up front."""
+    """Regression: a bound form body returned 500 on every request; now refused at startup."""
     from fastapi import Form
 
     pytrat = kit.pytrat()

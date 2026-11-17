@@ -146,9 +146,7 @@ async def test_recorder_fans_out_and_survives_log_failure_on_denial(caplog):
 
 
 async def test_recorder_survives_a_raising_sink_on_denial(caplog):
-    """Regression (found by tests/integration/test_failure_injection.py): a sink that raised
-    from ``emit`` escaped ``record_denial`` ("never raises") and replaced the denial with a 500.
-    """
+    """Regression: a raising sink escaped ``record_denial`` and turned a denial into a 500."""
 
     class RaisingSink:
         def emit(self, event):

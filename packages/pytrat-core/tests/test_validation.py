@@ -113,7 +113,7 @@ class TestRejectsShape:
 
     @pytest.mark.parametrize("claim", ["tctx", "rctx", "act"])
     def test_deeply_nested_object_claim_is_invalid(self, factory, verifier, claim: str) -> None:
-        """Regression (found by fuzz/fuzz_verify_signed.py): RecursionError escaped verify."""
+        """Regression (fuzz/fuzz_verify_signed.py): RecursionError escaped verify."""
         payload = factory.claims(**{claim: None})
         body = json.dumps(payload)[:-1] + f', "{claim}": {{"a": ' + "[" * 600 + "]" * 600 + "}}"
         token = factory.mint_payload(body.encode())

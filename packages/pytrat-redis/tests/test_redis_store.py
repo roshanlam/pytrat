@@ -52,9 +52,6 @@ def make_store(client: FakeRedisClient, clock: FrozenClock, **options: object) -
     return RedisReplayStore(client, clock=clock, **options)  # type: ignore[arg-type]
 
 
-# ------------------------------------------------------------------ decisions
-
-
 def test_satisfies_the_core_replay_store_protocol(client, clock) -> None:
     store: ReplayStore = make_store(client, clock)
     store.record_once(KEY, NOW + 60)
@@ -113,9 +110,6 @@ def test_prefixes_isolate_deployments(server, clock) -> None:
     make_store(FakeRedisClient(server), clock, prefix="payments:").record_once(KEY, NOW + 60)
 
 
-# ------------------------------------------------------------------ key handling
-
-
 def test_raw_txn_is_never_sent_to_redis(client, clock) -> None:
     make_store(client, clock).record_once(KEY, NOW + 60)
     name = client.calls[0][0]
@@ -130,9 +124,6 @@ def test_key_with_lone_surrogate_is_hashed_not_crashed(client, clock) -> None:
         store.record_once(replay_key("txn-\ud800", "op"), NOW + 60)
     assert caught.value.reason is ReasonCode.REPLAY_DETECTED
     store.record_once(replay_key("txn-\ud801", "op"), NOW + 60)
-
-
-# ------------------------------------------------------------------ expiry
 
 
 def test_ttl_is_relative_to_the_injected_clock_plus_margin(client, clock) -> None:
@@ -192,9 +183,6 @@ def test_expiry_beyond_max_ttl_is_denied_not_truncated(client, clock) -> None:
     assert caught.value.reason is ReasonCode.DEPENDENCY_UNAVAILABLE
     assert "maximum" in caught.value.detail
     assert len(client.calls) == 1
-
-
-# ------------------------------------------------------------------ fail closed
 
 
 @pytest.mark.parametrize(
@@ -261,9 +249,6 @@ def test_store_logs_nothing_about_keys_on_success(client, clock, caplog) -> None
     assert not [r for r in caplog.records if r.name.startswith("pytrat.redis")]
 
 
-# ------------------------------------------------------------------ configuration
-
-
 @pytest.mark.parametrize("prefix", ["", "has space:", "tab\t:", "nl\n:"])
 def test_invalid_prefix_is_rejected(client, clock, prefix) -> None:
     with pytest.raises(ConfigurationError):
@@ -320,9 +305,6 @@ def test_from_url_rejects_unbounded_timeouts(timeout) -> None:
         )
 
 
-# ------------------------------------------------------------------ service namespace
-
-
 def test_namespace_is_required() -> None:
     with pytest.raises(TypeError):
         RedisReplayStore(FakeRedisClient(FakeRedisServer(FrozenClock(NOW))))  # type: ignore[call-arg]
@@ -377,9 +359,6 @@ def test_from_url_passes_the_namespace_through() -> None:
     assert "namespace='ledger-service'" in repr(store)
 
 
-# ------------------------------------------------------------------ TLS
-
-
 def _ssl_kwargs(store: RedisReplayStore) -> dict[str, object]:
     pool = store._client.connection_pool  # type: ignore[attr-defined]
     return {k: v for k, v in pool.connection_kwargs.items() if k.startswith("ssl")}
@@ -423,9 +402,6 @@ def test_from_url_rejects_rediss_query_that_disables_verification(query) -> None
     assert "hunter2" not in str(caught.value)
     assert "replay.internal" not in str(caught.value)
     assert caught.value.__cause__ is None
-
-
-# ------------------------------------------------------------------ eviction policy
 
 
 def test_verify_configuration_accepts_noeviction(client, clock) -> None:

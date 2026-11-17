@@ -205,7 +205,7 @@ def test_dropped_key_names_are_audit_safe(tts):
     ],
 )
 def test_value_matches_is_strict(value, json_type, ok):
-    """CLAUDE.md invariant 9: exact type equality; floats only when declared."""
+    """Exact type equality; floats only when declared."""
     assert value_matches(value, json_type) is ok
 
 

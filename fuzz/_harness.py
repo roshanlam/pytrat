@@ -114,7 +114,7 @@ def sign_segments(header: bytes, payload: bytes, signer: TestKey) -> str:
 
 
 def assert_no_token(error: BaseException) -> None:
-    """Fail if an error's message or repr contains a compact JWS (CLAUDE.md invariant 4)."""
+    """Fail if an error's message or repr contains a compact JWS: tokens never appear in errors."""
     if _COMPACT_JWS.search(str(error)) or _COMPACT_JWS.search(repr(error)):
         raise AssertionError(f"{type(error).__name__} message contains a compact JWS")
 

@@ -21,9 +21,9 @@ class TransactionMiddleware:
     """Denies requests under ``PYTRAT['PROTECTED_PREFIXES']`` whose view declares no policy.
 
     A view counts as covered if it is decorated with ``@require_transaction`` or ``@exempt``.
-    Anything else under a protected prefix gets 403 ``POLICY_NOT_FOUND`` before the view runs
-    (default deny, plan §4.2). The decorator itself performs the enforcement; this middleware only
-    guarantees that a forgotten decorator fails closed. Works under WSGI and ASGI.
+    Anything else under a protected prefix gets 403 ``POLICY_NOT_FOUND`` before the view runs.
+    The decorator performs enforcement; this middleware only makes a forgotten decorator fail
+    closed. Works under WSGI and ASGI.
     """
 
     sync_capable = True

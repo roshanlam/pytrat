@@ -1,8 +1,8 @@
 """Trusted verification keys.
 
-Keys always come from trusted configuration and are selected by ``kid``. A token can never supply
-or point to its own key (CLAUDE.md invariant 3). Key sets are immutable; refreshing a remote JWKS
-produces a new set that is swapped in atomically (see ``pytrat.client.jwks``).
+Keys always come from trusted configuration and are selected by ``kid``; a token can never supply
+or point to its own key. Key sets are immutable: refreshing a remote JWKS produces a new set that is
+swapped in atomically (see ``pytrat.client.jwks``).
 """
 
 from __future__ import annotations

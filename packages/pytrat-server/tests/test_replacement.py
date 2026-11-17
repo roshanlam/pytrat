@@ -176,7 +176,7 @@ async def test_chain_is_reconstructed_from_log_pytrat_p9(tts):
 
 
 async def test_concurrent_replacements_cannot_exceed_the_limit(extending, monkeypatch):
-    """Security review #5: five simultaneous replacements of one txn against a limit of two."""
+    """Attack: five simultaneous replacements of one txn race a limit of two."""
     import asyncio
 
     tts = extending

@@ -1,4 +1,4 @@
-"""Txn-Token signing. The only place in PyTraT that holds signing keys (CLAUDE.md invariant 6).
+"""Txn-Token signing: the only place in PyTraT that holds signing keys.
 
 :class:`Signer` is the port; :class:`KeyRingSigner` is the in-process implementation and
 :class:`FileKeySigner` loads it from PEM files. A KMS or HSM adapter implements :class:`Signer`

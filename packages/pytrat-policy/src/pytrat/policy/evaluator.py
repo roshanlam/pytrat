@@ -53,7 +53,7 @@ class AuthorizationRequest:
         token: The verified Transaction Token, or None if the request carried none.
         caller: The authenticated workload identity of the immediate caller, or None if the
             caller could not be authenticated. A Transaction Token is not authentication
-            (CLAUDE.md invariant 8); this value must come from mTLS, a workload JWT or similar.
+            (txn-tokens-11 §13.12); this value must come from mTLS, a workload JWT or similar.
         request_data: The validated request parameters compared against ``tctx``.
         operation: Optional operation label for correlation. It is not an authorization input.
     """

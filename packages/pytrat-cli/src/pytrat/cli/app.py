@@ -56,9 +56,6 @@ def version() -> None:
         typer.echo(f"{name}: {draft}")
 
 
-# ------------------------------------------------------------------------------------- keys
-
-
 @keys_app.command("generate")
 def keys_generate(
     kid: Annotated[str, typer.Option(help="Key identifier to publish in the JWKS.")],
@@ -122,9 +119,6 @@ def _write_private(path: Path, data: bytes) -> None:
     path.chmod(_PRIVATE_FILE_MODE)
 
 
-# ----------------------------------------------------------------------------------- policy
-
-
 @policy_app.command("check")
 def policy_check(
     path: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Policy YAML.")],
@@ -140,9 +134,6 @@ def policy_check(
     typer.secho(f"OK: {len(policy_set.routes)} route(s)", fg=typer.colors.GREEN)
     for route, policy in policy_set.routes:
         typer.echo(f"  {route.method} {route.path} -> {policy.policy_id}")
-
-
-# ------------------------------------------------------------------------------------ token
 
 
 @token_app.command("inspect")
@@ -193,9 +184,6 @@ def _decode_unverified(raw: str) -> tuple[object, object]:
     except (ValueError, binascii.Error):
         raise _fail("token header or payload is not valid base64url JSON") from None
     return header, payload
-
-
-# -------------------------------------------------------------------------------------- tts
 
 
 @tts_app.command("serve")

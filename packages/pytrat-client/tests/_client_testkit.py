@@ -97,9 +97,6 @@ def current(factory: TokenFactory, verifier: TokenVerifier) -> VerifiedToken:
     return verifier.verify(factory.mint(scope="payments.read payments.transfer"))
 
 
-# ----------------------------------------------------------------- token-service client shells
-
-
 class SyncTokenShell:
     def __init__(self, handler: Handler, verifier: TokenVerifier, **kwargs: object) -> None:
         credential = kwargs.pop("credential", StaticCredential())
@@ -139,9 +136,6 @@ class AsyncTokenShell:
 @pytest.fixture(params=["sync", "async"])
 def token_shell(request: pytest.FixtureRequest) -> type[SyncTokenShell] | type[AsyncTokenShell]:
     return SyncTokenShell if request.param == "sync" else AsyncTokenShell
-
-
-# ----------------------------------------------------------------- propagating HTTP client shells
 
 
 class SyncHttpShell:
@@ -185,9 +179,6 @@ class AsyncHttpShell:
 @pytest.fixture(params=["sync", "async"])
 def http_shell(request: pytest.FixtureRequest) -> type[SyncHttpShell] | type[AsyncHttpShell]:
     return SyncHttpShell if request.param == "sync" else AsyncHttpShell
-
-
-# ----------------------------------------------------------------- JWKS refresher shells
 
 
 class SyncJwksShell:

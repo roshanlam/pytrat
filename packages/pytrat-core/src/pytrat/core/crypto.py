@@ -310,8 +310,8 @@ def sign_compact(
 ) -> str:
     """Produce a compact JWS over a JSON payload.
 
-    This is a primitive. Only the Transaction Token Service and test helpers hold private keys and
-    call it; resource services never do (CLAUDE.md invariant 6).
+    Only the Transaction Token Service and test helpers hold private keys and call this;
+    resource services never do.
     """
     if alg in FORBIDDEN_ALGORITHMS:
         raise ConfigurationError(f"algorithm {alg!r} is not permitted for signing")

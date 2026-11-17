@@ -2,10 +2,10 @@
 
 A Txn-Token presented as ``subject_token`` (``subject_token_type`` =
 ``urn:ietf:params:oauth:token-type:txn_token``, PyTraT profile P4) yields a replacement token.
-Replacement only attenuates (CLAUDE.md invariant 5): ``txn``, ``sub``, ``aud``, ``iss``, ``tctx``
-and ``act`` are copied from the verified input, never taken from the request; scope only shrinks;
-``rctx`` only gains members; lifetime never grows unless the deployment opts in. Agent-chain rules
-are delegated to :mod:`pytrat.agents`.
+Replacement only attenuates: ``txn``, ``sub``, ``aud``, ``iss``, ``tctx`` and ``act`` are copied
+from the verified input, never taken from the request; scope only shrinks; ``rctx`` only gains
+members; lifetime never grows unless the deployment opts in. Agent-chain rules are delegated to
+:mod:`pytrat.agents`.
 """
 
 from __future__ import annotations

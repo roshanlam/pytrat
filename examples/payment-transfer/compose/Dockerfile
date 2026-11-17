@@ -11,7 +11,6 @@ ARG UV_IMAGE=ghcr.io/astral-sh/uv:0.13.5
 
 FROM ${UV_IMAGE} AS uv
 
-# ---------------------------------------------------------------- build: resolve and install
 FROM ${PYTHON_IMAGE} AS build
 COPY --from=uv /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
@@ -20,8 +19,8 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_PROJECT_ENVIRONMENT=/opt/venv
 WORKDIR /src
 
-# Third-party dependencies first, in their own layer. Only the workspace members the demo runs
-# (pytrat-server and pytrat-fastapi) and their dependencies are installed.
+# Third-party dependencies get their own cached layer. Only the workspace members the demo runs
+# (pytrat-server, pytrat-fastapi) and their dependencies are installed.
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
@@ -29,14 +28,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-workspace \
         --package pytrat-server --package pytrat-fastapi
 
-# Then the workspace packages themselves, as regular (non-editable) installs into the venv.
+# Workspace packages as regular (non-editable) installs.
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable \
         --package pytrat-server --package pytrat-fastapi
 
-# ---------------------------------------------------------------- runtime
 FROM ${PYTHON_IMAGE} AS runtime
 
 # One unprivileged user. Mount points exist in the image, owned by that user, so fresh named

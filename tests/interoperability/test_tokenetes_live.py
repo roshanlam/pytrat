@@ -164,7 +164,7 @@ def _draft_11_claims() -> dict[str, object]:
     return factory.claims(iss=ISSUER, aud=AUDIENCE, scope="stock-trade", tctx=ORDER)
 
 
-# ------------------------------------------------------------------ Tokenetes as TTS
+# Tokenetes as TTS.
 
 
 def test_tokenetes_issues_with_draft_11_response_members(issued: dict[str, object]) -> None:
@@ -244,7 +244,7 @@ def test_tokenetes_token_endpoint_requires_spiffe_mtls() -> None:
         client.post(TOKEN_ENDPOINT, data=_tokenetes_form())
 
 
-# ------------------------------------------------------------------ tokenetes-agent as verifier
+# tokenetes-agent as verifier.
 
 
 def test_tokenetes_agent_accepts_tokenetes_token(issued: dict[str, object]) -> None:

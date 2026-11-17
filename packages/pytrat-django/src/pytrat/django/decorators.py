@@ -107,8 +107,7 @@ def require_transaction(
     ``policy_id`` names a resource in the YAML policy (``PYTRAT['POLICY']``). Per request the
     decorator builds request data (strict JSON body, URL kwargs and query parameters; a name in two
     sources is a 400), runs the configured :class:`TransactionEnforcer`, sets
-    ``request.transaction`` and binds the token with
-    :func:`pytrat.client.context.bind_transaction` while the view runs, so outbound
+    ``request.transaction`` and binds the token while the view runs so outbound
     ``TransactionClient`` calls propagate it. Any :class:`PyTraTError`, including one the view
     raises, becomes an RFC 9457 problem response.
 
@@ -209,7 +208,7 @@ def _wrap_sync(view: SyncView, guard: TransactionGuard) -> SyncView:
 
 
 def _wrap_async(view: AsyncView, guard: TransactionGuard) -> AsyncView:
-    # The enforcer is CPU-only (plan §4.7), so it runs inline rather than in a thread.
+    # The enforcer does no I/O, so it runs inline rather than in a thread.
     @functools.wraps(view)
     async def wrapper(request: HttpRequest, *args: object, **kwargs: object) -> HttpResponse:
         debug = _debug_errors()

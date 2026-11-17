@@ -319,7 +319,7 @@ class CompiledPolicy:
             return
         if agentic_ctx is None:
             # Any constraint *about* the agent chain is unsatisfiable without one; only a hop
-            # limit is met by a chain of zero agents. (Security review finding #2.)
+            # limit is met by a chain of zero agents.
             if (
                 agents.require_agent_context
                 or agents.require_verified_agent

@@ -1,4 +1,4 @@
-"""Failure injection: real components wired together, one dependency broken at a time (M9).
+"""Failure injection: real components wired together, one dependency broken at a time.
 
 Every scenario proves the same property: when the TTS, its JWKS, the Agent Attribute Store, an
 audit sink or a replay store fails, the outcome is *deny* (no token, no handler call), with a
@@ -67,9 +67,6 @@ IDP = "https://idp.example"
 API = "https://api.payments.example"
 NOW = 1_795_000_000
 COMPACT_JWS = re.compile(r"eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{16,}")
-
-# --------------------------------------------------------------------------- fault doubles
-
 
 type Fault = Callable[[httpx.Request], httpx.Response]
 
@@ -159,9 +156,6 @@ class UnavailableReplayStore:
     def record_once(self, key: str, expires_at: float) -> None:
         self.calls += 1
         raise DependencyError("replay store is unreachable")
-
-
-# --------------------------------------------------------------------------- the deployment
 
 
 def _secret(path: Path, data: bytes) -> Path:
@@ -319,7 +313,7 @@ def assert_no_token_in(error: BaseException) -> None:
     assert not COMPACT_JWS.search(repr(error))
 
 
-# --------------------------------------------------------------------------- TTS down (client view)
+# --- TTS down (client view)
 
 
 @pytest.mark.parametrize(
@@ -428,7 +422,7 @@ async def test_response_lost_after_issuance_releases_no_token(world: World) -> N
     assert len(issued) == 1  # the TTS log still accounts for the token it signed
 
 
-# --------------------------------------------------------------------------- JWKS down (resource)
+# --- JWKS down (resource)
 
 
 @dataclass
@@ -500,8 +494,8 @@ BAD_JWKS = [
     pytest.param(status(200, b"{not json", "application/json"), id="garbage"),
     pytest.param(json_body({"keys": []}), id="empty-set"),
     pytest.param(json_body({"keys": [{"kty": "oct", "kid": "tts-1", "k": "c2VjcmV0"}]}), id="oct"),
-    # Under the 256 KiB cap but nested deeper than the decoder's stack: before strict_loads
-    # mapped RecursionError to ValueError, this escaped the refresher as a 500.
+    # Regression: under the 256 KiB cap but nested past the decoder's recursion limit, this
+    # escaped the refresher as a 500 until strict_loads mapped RecursionError to ValueError.
     pytest.param(status(200, b"[" * 120_000 + b"]" * 120_000, "application/json"), id="deep"),
     pytest.param(status(200, b" " * 300_000, "application/json"), id="oversized"),
 ]
@@ -569,7 +563,7 @@ async def test_poisoned_jwks_refresh_is_discarded_whole(world: World, ledger: Le
     assert ledger.calls == [genuine.id]
 
 
-# --------------------------------------------------------------------------- AAS down (TTS)
+# --- Agent Attribute Store down (TTS)
 
 
 @pytest.mark.parametrize(
@@ -614,7 +608,7 @@ async def test_agent_store_down_during_replacement_denies(
     assert denial.transaction_id == current.claims.txn
 
 
-# --------------------------------------------------------------------------- audit sink down
+# --- Audit sink down
 
 
 async def test_tts_sink_failure_on_denial_keeps_the_original_denial(world: World) -> None:
@@ -631,9 +625,10 @@ async def test_tts_sink_failure_on_denial_keeps_the_original_denial(world: World
 
 
 async def test_tts_sink_failure_after_durable_log_keeps_the_log_truthful(world: World) -> None:
-    """The issuance log is authoritative (P9): once it has recorded the token, a broken
-    secondary sink neither withholds the token nor leaves a phantom success followed by a
-    denial (which would also consume the replacement budget)."""
+    """PyTraT profile P9: once the authoritative issuance log has recorded the token, a broken
+    secondary sink neither withholds it nor records a phantom success followed by a denial
+    (which would also consume the replacement budget).
+    """
     client, _ = world.client()
     world.sink.broken = True
     token = await world.issue(client)
@@ -706,8 +701,9 @@ async def test_resource_sink_failure_never_turns_into_an_allow(
 async def test_resource_sink_failure_on_a_single_use_grant_consumes_the_use(
     resource_kit: TokenFactory,
 ) -> None:
-    """P35, documented trade-off: the use is recorded before the grant is audited, so a grant
-    refused because the sink is down is not retryable with the same token (fail closed)."""
+    """PyTraT profile P35: the use is recorded before the grant is audited, so a grant refused
+    because the sink is down is not retryable with the same token (fail closed).
+    """
     sink = FlakySink()
     sink.broken = True
     store = InMemoryReplayStore(clock=resource_kit.clock)
@@ -721,7 +717,7 @@ async def test_resource_sink_failure_on_a_single_use_grant_consumes_the_use(
     assert calls == []
 
 
-# --------------------------------------------------------------------------- replay store down
+# --- Replay store down
 
 
 async def test_resource_replay_store_down_denies_with_503(resource_kit: TokenFactory) -> None:

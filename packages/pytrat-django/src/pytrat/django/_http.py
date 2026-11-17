@@ -49,10 +49,10 @@ def inbound_request(request: HttpRequest) -> InboundRequest:
     Header names are reconstructed from ``request.META`` (``HTTP_TXN_TOKEN`` -> ``Txn-Token``)
     and ``peer`` is ``REMOTE_ADDR``.
 
-    WSGI (PEP 3333) and Django's ASGI handler both join repeated headers into one value with a
-    comma. A compact JWS never contains a comma, so a ``Txn-Token`` value containing one means the
-    header was sent more than once. It is split back into separate values here so the enforcer's
-    "exactly one ``Txn-Token``" check (txn-tokens-11 §12.1) rejects it as ``TOKEN_MALFORMED``.
+    WSGI (PEP 3333) and Django's ASGI handler join repeated headers with a comma. A compact JWS
+    never contains one, so a comma in ``Txn-Token`` means the header was repeated; the value is
+    split back apart so the enforcer's single-token check (txn-tokens-11 §12.1) rejects it as
+    ``TOKEN_MALFORMED``.
     """
     meta = _meta(request)
     headers: list[tuple[str, str]] = []
@@ -60,7 +60,7 @@ def inbound_request(request: HttpRequest) -> InboundRequest:
         if not isinstance(value, str):
             continue
         if key == _TXN_TOKEN_META_KEY:
-            # txn-tokens-11 §12.1: exactly one token; a comma means a joined duplicate.
+            # txn-tokens-11 §12.1
             headers.extend((TXN_TOKEN_HEADER, part) for part in value.split(","))
         elif key in _UNPREFIXED_HEADERS:
             headers.append((_UNPREFIXED_HEADERS[key], value))

@@ -10,14 +10,14 @@ from typing import Final
 
 INSTRUMENTATION_SCOPE: Final = "pytrat.otel"
 
-# ------------------------------------------------------------------ span
+# Span events
 EVENT_NAME_PREFIX: Final = "pytrat."
 """Span event name is this prefix plus the audit event type, e.g. ``pytrat.token.issued``."""
 
 AUDIT_SPAN_NAME: Final = "pytrat.audit"
 """Name of the short span recorded when no span is active."""
 
-# ------------------------------------------------------------------ attributes
+# Attributes
 AUDIT_SCHEMA_VERSION: Final = "pytrat.audit.schema_version"
 EVENT_TYPE: Final = "pytrat.event.type"
 DECISION: Final = "pytrat.decision"
@@ -36,11 +36,11 @@ AGENT_MIN_ASSURANCE_LEVEL: Final = "pytrat.agent.min_assurance_level"
 DETAIL_PREFIX: Final = "pytrat.detail."
 """Each ``AuditEvent.detail`` entry becomes ``pytrat.detail.<key>``."""
 
-# ------------------------------------------------------------------ attribute values
+# Attribute values
 DECISION_ALLOW: Final = "allow"
 DECISION_DENY: Final = "deny"
 
-# ------------------------------------------------------------------ metrics
+# Metrics
 AUTHORIZATION_DECISIONS: Final = "pytrat.authorization.decisions"
 ISSUANCE_DECISIONS: Final = "pytrat.issuance.decisions"
 REPLACEMENT_DECISIONS: Final = "pytrat.replacement.decisions"

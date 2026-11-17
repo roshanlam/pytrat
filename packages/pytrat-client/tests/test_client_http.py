@@ -1,4 +1,4 @@
-"""Propagating HTTP clients (txn-tokens-11 §12.1, CLAUDE.md invariant 7), both shells."""
+"""Propagating HTTP clients (txn-tokens-11 §12.1), run against both shells."""
 
 from __future__ import annotations
 
@@ -221,8 +221,6 @@ async def test_every_verb_propagates_the_token(http_shell, current, verb, kwargs
     assert sent.headers[TXN_TOKEN_HEADER] == current.forwardable.reveal()
 
 
-# ----------------------------------------------------------------------------- configuration
-
 CLIENTS = [TransactionClient, AsyncTransactionClient]
 
 
@@ -287,9 +285,6 @@ async def test_async_client_closes_only_what_it_owns() -> None:
         pass
     assert not injected.is_closed
     await injected.aclose()
-
-
-# ---------------------------------------------------------------- auth-flow guard
 
 
 class _CopyTokenToAuthorization(httpx.Auth):

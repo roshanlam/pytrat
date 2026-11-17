@@ -162,12 +162,12 @@ def test_unknown_parameters_ignored():
         '"s"',
         '{"a":1,"a":2}',
         '{"a": NaN}',
-        # Regression (found by fuzz/fuzz_strict_json.py): decoded to inf, later unsignable.
+        # Regression: decoded to inf, which could not be signed later.
         '{"a": 1e400}',
         "{",
         "[" * 50 + "]" * 50,
         '{"a":' * 20 + "1" + "}" * 20,
-        # Regression (security review): lone surrogates crashed request_details hashing (500).
+        # Regression: lone surrogates crashed request_details hashing (500).
         '{"\\ud800": 1}',
         '{"a": "\\udfff"}',
     ],

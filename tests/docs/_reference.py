@@ -1,4 +1,4 @@
-"""Walk the strict configuration models so the docs tests can compare them with the reference pages.
+"""Flatten the strict configuration models for comparison with the reference pages.
 
 A reference table row looks like ``| `dotted.key` | type | default | description |``. Items of a
 list of objects are written ``key[].member``; values of a mapping keyed by an id are written

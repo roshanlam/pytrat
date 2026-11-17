@@ -102,10 +102,9 @@ def _parse_yaml(text: str, label: str) -> object:
         raise ConfigurationError(f"{label}: invalid YAML{where}") from None
     except ConfigurationError:
         raise
-    except Exception:  # noqa: BLE001 - see below; the failure is re-raised, never swallowed
-        # PyYAML's constructors raise ValueError, IndexError, KeyError or AttributeError for
-        # tagged scalars such as "!!int", "!!bool x" or 2001-13-14, and deep nesting exhausts its
-        # recursive composer (RecursionError). Any of them means the document is invalid.
+    except Exception:  # noqa: BLE001 - re-raised as ConfigurationError
+        # PyYAML constructors raise ValueError, IndexError, KeyError or AttributeError on tagged
+        # scalars such as "!!int" or 2001-13-14, and deep nesting raises RecursionError.
         raise ConfigurationError(f"{label}: invalid YAML") from None
 
 

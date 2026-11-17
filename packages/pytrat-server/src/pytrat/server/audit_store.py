@@ -328,8 +328,10 @@ class AuditRecorder:
     def _emit(self, event: AuditEvent) -> None:
         try:
             self._sink.emit(event)
-        except Exception as exc:  # noqa: BLE001 - the authoritative log already holds the event; a sink breaking its no-raise contract must not change the outcome
-            _logger.error("audit sink could not record an event: %s", type(exc).__name__)  # noqa: TRY400 - the exception text may echo event data
+        except Exception as exc:  # noqa: BLE001 - sink must not decide the outcome
+            _logger.error(  # noqa: TRY400 - message may echo event data
+                "audit sink could not record an event: %s", type(exc).__name__
+            )
 
     async def record_denial(self, event: AuditEvent) -> None:
         """Record a denial. Never raises: the request is already being refused."""

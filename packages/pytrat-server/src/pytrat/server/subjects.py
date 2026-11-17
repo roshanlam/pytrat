@@ -120,9 +120,9 @@ def _scope(payload: Mapping[str, object]) -> Scope | None:
 def _reject_requester_asserted_act(payload: Mapping[str, object]) -> None:
     """Refuse ``act`` in a subject the requesting workload wrote itself.
 
-    PyTraT profile P28 (security review finding #3): self-signed and unsigned subjects are
-    asserted by the requester, so it could otherwise name any registered agent (and inherit its
-    assurance) as the delegated actor. Delegation must come from an independent issuer.
+    PyTraT profile P28: self-signed and unsigned subjects are asserted by the requester, which
+    could otherwise name any registered agent (and inherit its assurance) as the delegated actor.
+    Delegation must come from an independent issuer.
     """
     if "act" in payload:
         raise _invalid_grant(

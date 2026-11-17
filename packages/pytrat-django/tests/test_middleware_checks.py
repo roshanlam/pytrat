@@ -16,9 +16,6 @@ def problem_reason(response) -> str:
     return response.json()["reason_code"]
 
 
-# ------------------------------------------------------------------ middleware
-
-
 @pytest.mark.parametrize(
     "url", ["/internal/forgotten", "/internal/nested/forgotten", "/internal/legacy"]
 )
@@ -71,9 +68,6 @@ def test_decorator_order_with_exempt_is_preserved() -> None:
     assert is_exempt(view)
 
 
-# ------------------------------------------------------------------ system check
-
-
 def ids(messages) -> list[str]:
     return [message.id for message in messages]
 
@@ -117,9 +111,6 @@ def test_check_without_protected_prefixes_ignores_undecorated_views() -> None:
     with override_settings(PYTRAT=support.pytrat_settings(PROTECTED_PREFIXES=[])):
         support.reload_runtime()
         assert "pytrat.E001" not in ids(check_routes())
-
-
-# ------------------------------------------------------------------ decorator configuration
 
 
 def test_decorator_requires_scope_or_policy_id() -> None:

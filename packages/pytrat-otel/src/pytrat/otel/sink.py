@@ -28,23 +28,22 @@ _COUNTERS = (
 class OpenTelemetryAuditSink:
     """Records each :class:`AuditEvent` as an OpenTelemetry span event and counts decisions.
 
-    Tracing: the event is added to the current span when it is recording, so it sits on the
-    request span next to the HTTP attributes and shares its trace id (the same id the
-    ``AuditEvent`` carries). With no recording span, a short ``pytrat.audit`` span is started
-    in the current context to carry it, so events are not lost in uninstrumented applications;
-    because it is started in the current context, a sampled-out parent also samples it out.
+    Tracing: the event is added to the current span when it is recording, so it shares the
+    request's trace id (the same id the ``AuditEvent`` carries). Otherwise a short
+    ``pytrat.audit`` span is started in the current context to carry it, so uninstrumented
+    applications still see events and a sampled-out parent still samples it out.
 
     Metrics: one increment of ``pytrat.authorization.decisions``,
     ``pytrat.issuance.decisions`` or ``pytrat.replacement.decisions`` per event, with only the
     ``pytrat.decision``, ``pytrat.reason_code`` and ``pytrat.service`` attributes.
 
-    Attributes are primitives built from identifiers, reason codes and digests only. Any string
-    shaped like a compact JWS or JWE is withheld (and counted in :attr:`redacted`), as defence in
-    depth: audit events never carry tokens, and this sink must not become the place one leaks.
+    Attributes are primitives built from identifiers, reason codes and digests only. As defence
+    in depth, any string shaped like a compact JWS or JWE is withheld and counted in
+    :attr:`redacted`.
 
-    Like every :class:`~pytrat.core.audit.AuditSink`, :meth:`emit` never raises: a telemetry
-    failure is logged (exception type only) and counted in :attr:`failed`. The decision has already
-    been taken when the event is emitted, so a failure here can never turn a denial into an allow.
+    Like every :class:`~pytrat.core.audit.AuditSink`, :meth:`emit` never raises: a failure is
+    logged (exception type only) and counted in :attr:`failed`. The decision is already taken
+    when the event is emitted, so a telemetry failure cannot turn a denial into an allow.
 
     Args:
         tracer_provider: Provider for the tracer. Defaults to the global provider.

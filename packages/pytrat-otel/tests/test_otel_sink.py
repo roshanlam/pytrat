@@ -107,9 +107,6 @@ FULL_ATTRIBUTES = {
 }
 
 
-# ------------------------------------------------------------------ spans
-
-
 def test_event_is_added_to_the_current_recording_span_with_exact_attributes(
     otel: Telemetry,
 ) -> None:
@@ -185,9 +182,6 @@ def test_agent_without_assurance_level_omits_it(otel: Telemetry) -> None:
     assert "pytrat.agent.min_assurance_level" not in attributes
 
 
-# ------------------------------------------------------------------ metrics
-
-
 def test_every_event_type_has_a_counter_and_decision() -> None:
     assert set(OUTCOMES) == set(EventType)
 
@@ -229,8 +223,6 @@ def test_allow_without_reason_code_has_no_reason_attribute(otel: Telemetry) -> N
         ({"pytrat.decision": "allow", "pytrat.service": "ledger-service"}, 1)
     ]
 
-
-# ------------------------------------------------------------------ token guard
 
 FACTORY = TokenFactory.create()
 SIGNED = FACTORY.mint(txn="txn-guard")
@@ -310,9 +302,6 @@ def test_any_compact_serialization_is_recognised(
 ) -> None:
     raw_header = json.dumps(header, indent=indent).encode()
     assert looks_like_jose(f"{b64url(raw_header)}.{b64url(payload)}.{b64url(signature)}")
-
-
-# ------------------------------------------------------------------ failures
 
 
 class _ExplodingCounter:

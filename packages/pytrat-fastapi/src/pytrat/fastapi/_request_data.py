@@ -1,13 +1,12 @@
 """Builds the request data that is compared against ``tctx`` (private).
 
-The comparison is only meaningful if it is made against exactly what the handler receives. So
-this module does not parse anything itself: it runs FastAPI's own parameter and body validation
-functions over the route's own parameter fields and the body FastAPI already read and cached on
-the same :class:`~starlette.requests.Request`. Same input, same fields, same validator: the bound
-values are the handler's values (a lax model coerces ``"10000"`` to ``10000`` for both).
+Binding is only meaningful against exactly what the handler receives, so nothing is parsed here:
+FastAPI's own validators run over the route's own fields and the body FastAPI already cached on
+the :class:`~starlette.requests.Request`. The bound values are therefore the handler's values (a
+lax model coerces ``"10000"`` to ``10000`` for both).
 
-The resulting mapping is ``path params + query params + body fields``; a name may come from only
-one of those sources (checked at startup).
+The result is ``path params + query params + body fields``; a name may come from only one of
+those sources (checked at startup).
 """
 
 from __future__ import annotations
@@ -82,7 +81,7 @@ class RequestDataReader:
 
         Raises:
             ConfigurationError: If two sources (path, query, body) provide the same name, or the
-                body is a form/file body (not bindable; security review finding #4).
+                body is a form or file body, which cannot be bound.
         """
         path_fields = tuple(dependant.path_params)
         query_fields = tuple(dependant.query_params)
@@ -157,9 +156,8 @@ class RequestDataReader:
 
     @staticmethod
     async def _received_body(request: Request) -> object:
-        # FastAPI has already read the body before solving dependencies; Starlette caches both
-        # the bytes and the parsed JSON on this Request, so this returns the very object FastAPI
-        # validated for the handler.
+        # FastAPI reads the body before solving dependencies and Starlette caches the bytes and
+        # parsed JSON on this Request, so this is the same object FastAPI validated.
         body = await request.body()
         if not body:
             return PydanticUndefined

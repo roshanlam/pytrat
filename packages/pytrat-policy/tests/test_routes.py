@@ -97,7 +97,7 @@ def test_route_template_properties() -> None:
     assert RouteTemplate.parse("GET", "/").segments == ()
 
 
-# ------------------------------------------------------------------ properties
+# Hypothesis properties
 
 segment = st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-._~", min_size=1, max_size=8)
 paths = st.lists(segment, min_size=1, max_size=6)

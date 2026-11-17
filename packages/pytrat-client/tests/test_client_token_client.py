@@ -202,8 +202,6 @@ async def test_tts_replacement_with_swapped_transaction_is_rejected(
         await shell.replace(current)
 
 
-# ----------------------------------------------------------------------------- configuration
-
 CLIENTS = [TransactionTokenClient, AsyncTransactionTokenClient]
 
 

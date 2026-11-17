@@ -103,7 +103,7 @@ def reject(token: str, token_verifier: TokenVerifier) -> TokenError:
     return excinfo.value
 
 
-# ------------------------------------------------------------------ Tokenetes -> PyTraT
+# Tokenetes -> PyTraT.
 
 
 def test_tokenetes_jwks_document_loads_as_trusted_keys(key: TestKey) -> None:
@@ -273,11 +273,9 @@ def test_tokenetes_audience_is_compared_exactly(factory: TokenFactory) -> None:
     assert error.reason is ReasonCode.TRUST_DOMAIN_MISMATCH
 
 
-# ------------------------------------------------------------------ PyTraT -> Tokenetes
-#
-# tokenetes-agent cannot be run here; these tests pin the properties of PyTraT TTS output that the
-# agent's verifier (tokenetes-agent trat.go / tratverifier.go) cannot accept. The live suite
-# (test_tokenetes_live.py) shows the agent's actual responses.
+# PyTraT -> Tokenetes. tokenetes-agent cannot run here, so these tests pin the properties of PyTraT
+# TTS output that its verifier (trat.go, tratverifier.go) cannot accept; test_tokenetes_live.py
+# shows the agent's actual responses.
 
 
 def _pytrat_tts_token(alg: str) -> tuple[str, dict[str, object]]:

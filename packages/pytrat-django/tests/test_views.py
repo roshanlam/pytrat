@@ -48,9 +48,6 @@ def assert_problem(response, status: int, reason: ReasonCode) -> dict[str, objec
     return body
 
 
-# ------------------------------------------------------------------ happy paths
-
-
 def test_legitimate_request_is_authorized_and_bound(client, world) -> None:
     response = post(client, "/internal/transfer", TCTX, headers(world))
     assert response.status_code == 200
@@ -122,9 +119,6 @@ def test_policy_without_binding_ignores_form_body(client, world) -> None:
         "/internal/no-binding", data={"field": "value"}, headers={"Txn-Token": token}
     )
     assert response.status_code == 200
-
-
-# ------------------------------------------------------------------ attacks
 
 
 def test_tampered_amount_is_rejected_and_audited(client, world) -> None:
@@ -213,9 +207,6 @@ def test_repeated_query_parameter_is_400(client, world) -> None:
     assert_problem(response, 400, ReasonCode.REQUEST_MALFORMED)
 
 
-# ------------------------------------------------------------------ body_model
-
-
 def test_body_model_binding_matches_what_the_view_sees(client, world) -> None:
     response = post(client, "/internal/model-transfer", {**TCTX, "memo": "rent"}, headers(world))
     assert response.status_code == 200
@@ -240,9 +231,6 @@ def test_body_model_validation_failure_is_422(client, world) -> None:
 def test_body_model_requires_json(client, world) -> None:
     response = client.post("/internal/model-transfer", headers=headers(world))
     assert_problem(response, 415, ReasonCode.REQUEST_MALFORMED)
-
-
-# ------------------------------------------------------------------ errors from views
 
 
 def test_pytrat_error_from_view_carries_transaction_id(client, world) -> None:
@@ -271,9 +259,6 @@ def test_policy_id_without_yaml_fails_closed(client, world) -> None:
         support.reload_runtime()
         with pytest.raises(ImproperlyConfigured, match="POLICY"):
             post(client, "/internal/yaml-transfer", TCTX, headers(world))
-
-
-# ------------------------------------------------------------------ problem+json shape
 
 
 def test_problem_json_shape(client, world) -> None:
@@ -311,9 +296,6 @@ def test_debug_errors_adds_detail_without_secrets(client, world) -> None:
     assert "99999" not in body["detail"]
 
 
-# ------------------------------------------------------------------ inbound conversion
-
-
 def test_inbound_request_maps_meta_to_headers() -> None:
     request = RequestFactory().post(
         "/x",
@@ -333,9 +315,6 @@ def test_inbound_request_without_peer() -> None:
     request = RequestFactory().get("/x", REMOTE_ADDR="")
     request.META["wsgi.something"] = object()
     assert inbound_request(request).peer is None
-
-
-# ------------------------------------------------------------------ consumed request streams
 
 
 def test_multipart_body_already_parsed_is_not_bindable(world) -> None:

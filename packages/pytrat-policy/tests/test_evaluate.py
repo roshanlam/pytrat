@@ -97,7 +97,7 @@ class Directory:
         return agent_id in self.registered
 
 
-# ------------------------------------------------------------------ allow
+# Allowed requests
 
 
 def test_valid_request_is_allowed_with_binding_result(mint: Mint) -> None:
@@ -138,7 +138,7 @@ def test_transactionless_policy_checks_only_the_caller(mint: Mint) -> None:
     assert_denied(policy, request(None, caller=None), ReasonCode.WORKLOAD_UNAUTHENTICATED)
 
 
-# ------------------------------------------------------------------ deny, one per check
+# Denials, one per check
 
 
 def test_missing_token_is_denied_token_missing() -> None:
@@ -186,7 +186,7 @@ def test_float_in_tctx_is_denied_claim_invalid(mint: Mint) -> None:
     assert_denied(transfer_policy(), request(token), ReasonCode.CLAIM_INVALID)
 
 
-# ------------------------------------------------------------------ evaluation order
+# Evaluation order
 
 
 def test_scope_failure_wins_over_binding_failure(mint: Mint) -> None:
@@ -234,7 +234,7 @@ def test_agent_failure_wins_over_replay_and_does_not_consume_use(mint: Mint) -> 
     assert len(store) == 0
 
 
-# ------------------------------------------------------------------ agents
+# Agent constraints
 
 
 AGENTS = AgentRequirements(
@@ -283,7 +283,7 @@ def test_unlisted_originator_is_denied_agent_not_allowed(mint: Mint) -> None:
 def test_agent_constraints_cannot_be_bypassed_by_omitting_agent_context(
     mint: Mint, requirements: AgentRequirements
 ) -> None:
-    """Security review #2: a plain token must not satisfy assurance or originator constraints."""
+    """Attack: a token without agentic_ctx must not satisfy assurance or originator rules."""
     assert_denied(
         transfer_policy(agents=requirements), request(mint()), ReasonCode.AGENT_CONTEXT_MISSING
     )
@@ -404,7 +404,7 @@ def test_scope_check_fails_closed_without_allowed_scopes(mint: Mint) -> None:
     assert_denied(policy, request(mint()), ReasonCode.SCOPE_INSUFFICIENT)
 
 
-# ------------------------------------------------------------------ replay
+# Replay
 
 
 def test_replayed_single_use_token_is_denied_replay_detected(factory: object, mint: Mint) -> None:
@@ -442,7 +442,7 @@ def test_reusable_token_is_allowed_without_single_use(mint: Mint) -> None:
     assert policy.evaluate(request(token)).allowed
 
 
-# ------------------------------------------------------------------ value types
+# Value types
 
 
 def test_decision_allowed_and_reason_are_consistent() -> None:

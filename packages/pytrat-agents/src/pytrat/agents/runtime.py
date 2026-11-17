@@ -205,8 +205,6 @@ class ToolRuntime:
         self._service = service
         self._tools: dict[str, _Tool] = {}
 
-    # ------------------------------------------------------------ registration
-
     def protected_tool[**P, R](
         self,
         *,
@@ -309,8 +307,6 @@ class ToolRuntime:
             return await result
         return result
 
-    # ------------------------------------------------------------ shells
-
     def _wrap_sync[**P, R](self, tool: _Tool, func: Callable[P, R]) -> Callable[P, R]:
         plain_func = cast("Callable[..., object]", func)
 
@@ -372,8 +368,6 @@ class ToolRuntime:
             error = DependencyError("token provider failed")
             self._deny(tool, None, error)
             raise error from exc
-
-    # ------------------------------------------------------------ pure-ish core
 
     def _invocation(self, tool: _Tool) -> ToolInvocation:
         return ToolInvocation(tool=tool.name, resource=tool.resource, scope=tool.scope)
@@ -456,9 +450,6 @@ class ToolRuntime:
             raise ConfigurationError(f"tool name {tool_name!r} suggests a credential operation")
 
 
-# ---------------------------------------------------------------- arguments
-
-
 def _arguments_model(
     tool_name: str, func: Callable[..., object], signature: inspect.Signature
 ) -> type[BaseModel]:
@@ -514,9 +505,6 @@ def _first_paragraph(doc: str | None) -> str:
     if not doc:
         return ""
     return inspect.cleandoc(doc).split("\n\n", 1)[0].replace("\n", " ").strip()
-
-
-# ---------------------------------------------------------------- result guard
 
 
 def find_token_like(text: str) -> bool:

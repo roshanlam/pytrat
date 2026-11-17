@@ -134,10 +134,9 @@ class RedisReplayStore:
     ) -> None:
         if not _is_key_text(prefix):
             raise ConfigurationError("replay key prefix must be non-empty printable text")
-        # PyTraT profile: replay keys carry the service's namespace. Without it two services on
-        # one Redis that mark the same operation id single-use would share records, so a
-        # workload holding the token could burn it at one service to deny it at another.
-        # ":" is excluded so a namespace cannot reach into another namespace's key space.
+        # PyTraT profile: keys carry the service's namespace, otherwise a workload holding the
+        # token could burn a single-use id at one service to deny it at another. ":" is
+        # excluded so one namespace cannot reach into another's key space.
         if not _is_key_text(namespace) or ":" in namespace:
             raise ConfigurationError(
                 "replay namespace must be non-empty printable text without spaces or ':'"
@@ -225,9 +224,8 @@ class RedisReplayStore:
         ``noeviction`` a full Redis refuses the write instead, which this store turns into a
         deny. Call it at startup. It cannot detect a policy changed later at runtime.
 
-        Managed Redis services often disable ``CONFIG``. Then this method raises
-        :class:`ConfigurationError`; verify ``noeviction`` through the provider instead and do not
-        call it.
+        Managed Redis services often disable ``CONFIG``, in which case this raises
+        :class:`ConfigurationError`; verify ``noeviction`` through the provider instead.
 
         Raises:
             ConfigurationError: If the policy is not ``noeviction``, cannot be read from the

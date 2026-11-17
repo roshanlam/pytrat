@@ -49,7 +49,7 @@ def load_error(document: object) -> ConfigurationError:
     return info.value
 
 
-# ------------------------------------------------------------------ valid documents
+# Valid documents
 
 
 def test_example_policy_loads() -> None:
@@ -116,7 +116,7 @@ def test_tuple_lists_in_mapping_input_are_accepted() -> None:
     assert load_policy(document).for_route("POST", "/internal/transfer")
 
 
-# ------------------------------------------------------------------ invalid documents
+# Invalid documents
 
 
 def resource_with_agents(agents: dict[str, object]) -> dict[str, object]:
@@ -386,7 +386,7 @@ def test_document_must_be_a_mapping() -> None:
         load_policy_text("")
 
 
-# ------------------------------------------------------------------ YAML and files
+# YAML parsing and files
 
 
 def test_file_errors_name_the_file(tmp_path: Path) -> None:
@@ -434,8 +434,8 @@ def test_multiple_documents_are_rejected() -> None:
         "version: 2001-13-14\n",
         "version: !!float x\n",
         "version: !!int 0x\n",
-        # Regression (Atheris, fuzz/fuzz_agent_registry.py): IndexError, KeyError and
-        # AttributeError from PyYAML's constructors.
+        # Regression (fuzz/fuzz_agent_registry.py): PyYAML constructors raised IndexError,
+        # KeyError and AttributeError.
         "version: !!int \n",
         "version: !!bool x\n",
         "version: !!timestamp x\n",
@@ -444,7 +444,7 @@ def test_multiple_documents_are_rejected() -> None:
     ],
 )
 def test_constructor_errors_and_deep_nesting_are_configuration_errors(text: str) -> None:
-    """Regression (found by fuzz/fuzz_policy_yaml.py): ValueError / RecursionError escaped."""
+    """Regression (fuzz/fuzz_policy_yaml.py): ValueError and RecursionError escaped."""
     with pytest.raises(ConfigurationError, match="invalid YAML") as excinfo:
         load_policy_text(text)
     assert excinfo.value.reason is ReasonCode.POLICY_INVALID

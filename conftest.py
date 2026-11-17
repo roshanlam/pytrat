@@ -1,7 +1,7 @@
 """Repository-wide pytest configuration.
 
 Every test in every package runs under :func:`_no_tokens_in_logs`, which fails the test if a
-compact JWS appears in any log record (CLAUDE.md invariant 4; txn-tokens-11 §15.2).
+compact JWS appears in any log record: tokens never reach logs (txn-tokens-11 §15.2).
 """
 
 from __future__ import annotations

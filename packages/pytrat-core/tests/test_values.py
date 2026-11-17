@@ -201,7 +201,7 @@ class TestJson:
 
     @pytest.mark.parametrize("raw", ["1e400", '{"amount": -1e999}', "[1E309]"])
     def test_overflowing_number_is_not_decoded_to_infinity(self, raw: str) -> None:
-        """Regression (found by fuzz/fuzz_strict_json.py): ``1e400`` decoded to ``inf``."""
+        """Regression (fuzz/fuzz_strict_json.py): ``1e400`` decoded to ``inf``."""
         with pytest.raises(ValueError, match="finite"):
             strict_loads(raw)
 
@@ -217,7 +217,7 @@ class TestJson:
         assert strict_loads('{"e": "\\ud83d\\ude00"}') == {"e": "\U0001f600"}
 
     def test_excessive_nesting_is_a_value_error(self) -> None:
-        """Regression (found by fuzz/fuzz_strict_json.py): RecursionError escaped."""
+        """Regression (fuzz/fuzz_strict_json.py): RecursionError escaped."""
         with pytest.raises(ValueError, match="nesting"):
             strict_loads("[" * 200_000 + "]" * 200_000)
 

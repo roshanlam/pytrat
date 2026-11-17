@@ -83,9 +83,6 @@ def make_runtime(
     return make
 
 
-# ---------------------------------------------------------------- happy path
-
-
 def test_granted_call_runs_tool_and_audits(
     make_runtime: Callable[..., ToolRuntime],
     sink: MemorySink,
@@ -143,9 +140,6 @@ def test_tool_never_receives_the_token(make_runtime: Callable[..., ToolRuntime])
     for func in (takes_token, takes_secret, takes_claims):
         with pytest.raises(ConfigurationError):
             runtime.protected_tool(scope="billing.read", resource="r")(func)
-
-
-# ---------------------------------------------------------------- authorization
 
 
 def test_scope_insufficient(make_runtime: Callable[..., ToolRuntime], sink: MemorySink) -> None:
@@ -238,9 +232,6 @@ def test_per_tool_verified_agent(
     with pytest.raises(AuthorizationError) as excinfo:
         checked()
     assert excinfo.value.reason is ReasonCode.AGENT_UNVERIFIED
-
-
-# ---------------------------------------------------------------- arguments
 
 
 def test_argument_validation(make_runtime: Callable[..., ToolRuntime], sink: MemorySink) -> None:
@@ -342,9 +333,6 @@ def test_unknown_tool(make_runtime: Callable[..., ToolRuntime]) -> None:
     runtime = make_runtime()
     with pytest.raises(ToolArgumentError):
         runtime.call("nope", {})
-
-
-# ---------------------------------------------------------------- async
 
 
 async def test_async_tool_with_sync_and_async_providers(
@@ -460,9 +448,6 @@ async def test_provider_failure_fails_closed(
         sync_tool()
     assert called == []
     assert len(sink.of_type(EventType.AUTHORIZATION_DENIED)) == 3
-
-
-# ---------------------------------------------------------------- result guard
 
 
 class _Report(BaseModel):
@@ -592,9 +577,6 @@ def test_find_token_like() -> None:
     assert find_token_like(SAMPLE_JWS)
     assert not find_token_like("a.b.c")
     assert not find_token_like("xeyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.sig")
-
-
-# ---------------------------------------------------------------- tool specs
 
 
 def test_tool_specs(make_runtime: Callable[..., ToolRuntime]) -> None:

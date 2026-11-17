@@ -1,9 +1,9 @@
 """HTTP clients that propagate the bound Transaction Token to trusted destinations only.
 
-txn-tokens-11 §12.1: the token travels in the ``Txn-Token`` header, never ``Authorization``.
-CLAUDE.md invariant 7: it is never sent to a host outside the allowlist and redirects are never
-followed with it. Workload authentication to the destination is separate (``auth``), because a
-Transaction Token is not authentication (invariant 8).
+The token travels in the ``Txn-Token`` header, never ``Authorization`` (txn-tokens-11 §12.1). It
+is sent only to allowlisted origins and redirects are never followed with it. Workload
+authentication to the destination is passed separately as ``auth``: a Transaction Token is not
+authentication.
 """
 
 from __future__ import annotations
@@ -88,8 +88,8 @@ class _Propagation:
         if headers is None:
             return
         if any(name.lower() == TXN_TOKEN_HEADER.lower() for name in headers):
-            # Only the bound token is ever sent; a second source would make it ambiguous which
-            # transaction the call belongs to (txn-tokens-11 §12.1: exactly one token).
+            # Only the bound token is sent; a second source would make the call's transaction
+            # ambiguous (txn-tokens-11 §12.1).
             raise ConfigurationError(
                 "callers must not set the Txn-Token header; bind a transaction instead",
                 ReasonCode.TOKEN_MALFORMED,
@@ -130,7 +130,7 @@ class _Propagation:
         return request
 
     def _check_destination(self, url: httpx.URL) -> None:
-        # CLAUDE.md invariant 7: exact origin match, checked before any connection is made.
+        # Exact origin match, checked before any connection is made.
         origin = origin_of(url)
         if origin is None or url.userinfo or origin not in self._trusted:
             raise AuthorizationError(

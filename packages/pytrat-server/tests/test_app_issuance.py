@@ -208,7 +208,7 @@ async def test_request_details_cannot_set_sub_or_txn(tts):
 
 
 async def test_mistyped_context_member_is_rejected(tts):
-    """CLAUDE.md invariant 9: "10000" and 10000.0 are not the integer 10000."""
+    """Strict comparison: "10000" and 10000.0 are not the integer 10000."""
     for amount in ("10000", 10000.0, True):
         response = await tts.post(tts.form(request_details={"amount_minor": amount}))
         assert response.status_code == 400

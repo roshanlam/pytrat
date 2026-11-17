@@ -52,9 +52,6 @@ def key_file(tmp_path: Path):
     return key, path
 
 
-# ----------------------------------------------------------------------------- private_key_jwt
-
-
 def test_private_key_jwt_adds_rfc7523_client_assertion(key_file) -> None:
     key, path = key_file
     clock = FrozenClock(1_800_000_000)
@@ -148,9 +145,6 @@ def test_inline_pem_string_is_not_accepted_as_a_key(key_file) -> None:
         )
 
 
-# ----------------------------------------------------------------------------- mTLS
-
-
 def _self_signed(tmp_path: Path) -> tuple[Path, Path]:
     key = ec.generate_private_key(ec.SECP256R1())
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "gateway")])
@@ -206,9 +200,6 @@ def test_mtls_unloadable_certificate_is_a_configuration_error(tmp_path: Path) ->
         credential.ssl_context()
     with pytest.raises(ConfigurationError):
         MtlsCredential("c", "k", client_id="")
-
-
-# ----------------------------------------------------------------------------- SPIFFE JWT-SVID
 
 
 def test_spiffe_svid_is_reread_on_every_call(tmp_path: Path) -> None:

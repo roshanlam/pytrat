@@ -178,7 +178,7 @@ class TransactionEnforcer:
         try:
             raw = request.single(TXN_TOKEN_HEADER)  # §12.1: exactly one token
             if raw is None:
-                raise TokenError(ReasonCode.TOKEN_MISSING, "Txn-Token header is required")  # noqa: TRY301 - audited below like every other token failure
+                raise TokenError(ReasonCode.TOKEN_MISSING, "Txn-Token header is required")  # noqa: TRY301 - audited below
             return self._verify(raw)
         except TokenError as error:
             self._emit(EventType.TOKEN_REJECTED, policy, error=error)
@@ -213,8 +213,8 @@ class TransactionEnforcer:
         )
         try:
             self._audit.emit(event)
-        except Exception as exc:  # noqa: BLE001 - a sink breaking its no-raise contract must not decide the outcome
-            _logger.error("audit sink failed: %s", type(exc).__name__)  # noqa: TRY400 - the exception text may echo event data
+        except Exception as exc:  # noqa: BLE001 - sink must not decide the outcome
+            _logger.error("audit sink failed: %s", type(exc).__name__)  # noqa: TRY400 - text may echo event data
             if error is None:
                 # Fail closed: a grant that cannot be audited is refused. A denial keeps its reason.
                 raise DependencyError("audit sink is unavailable") from None

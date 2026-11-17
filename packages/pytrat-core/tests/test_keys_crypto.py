@@ -69,8 +69,7 @@ class TestStaticKeySet:
 
     @pytest.mark.parametrize("kty", [["EC"], {"EC": 1}, None, 1])
     def test_non_string_kty_is_a_configuration_error(self, kty: object) -> None:
-        """Regression (found by fuzz/fuzz_jwks.py under Atheris): an unhashable ``kty`` raised
-        TypeError from the set-membership check."""
+        """Regression (fuzz/fuzz_jwks.py): an unhashable ``kty`` raised TypeError."""
         jwk = {**generate_test_key("ES256", kid="k").jwk(), "kty": kty}
         with pytest.raises(ConfigurationError) as excinfo:
             StaticKeySet.from_jwks({"keys": [jwk]})
@@ -82,7 +81,7 @@ class TestStaticKeySet:
             StaticKeySet.from_jwks_bytes(data)
 
     def test_deeply_nested_document_is_a_configuration_error(self) -> None:
-        """Regression (found by fuzz/fuzz_strict_json.py): RecursionError escaped the parser."""
+        """Regression (fuzz/fuzz_strict_json.py): RecursionError escaped the parser."""
         with pytest.raises(ConfigurationError) as excinfo:
             StaticKeySet.from_jwks_bytes(b"[" * 120_000 + b"]" * 120_000)
         assert excinfo.value.reason is ReasonCode.KEY_UNKNOWN

@@ -1,4 +1,4 @@
-"""txn-tokens-11 §15.2 / CLAUDE.md invariant 4: tokens never reach logs or audit records."""
+"""txn-tokens-11 §15.2: tokens never reach logs or audit records."""
 
 from __future__ import annotations
 

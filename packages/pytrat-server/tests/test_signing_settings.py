@@ -138,8 +138,7 @@ def test_create_app_from_settings_with_sqlite(config, tmp_path):
         "- a list",
         "a: [unclosed",
         "when: 2024-01-01\n",
-        # Regression (same class as fuzz/fuzz_policy_yaml.py findings): ValueError and
-        # RecursionError escaped load_settings.
+        # Regression: ValueError and RecursionError escaped load_settings.
         "when: 2024-13-01\n",
         "a: !!float x\n",
         "a: !!int \n",

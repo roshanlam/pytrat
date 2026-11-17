@@ -1,4 +1,4 @@
-"""Property tests: any replacement sequence only attenuates (CLAUDE.md invariant 5).
+"""Property tests: any sequence of replacements only attenuates the token.
 
 agent-profile-03 §3.3.1, §3.3.2, §4.2, §4.2.1, §5.9; txn-tokens-11 §13.15.
 """
@@ -94,11 +94,8 @@ def _apply(current: TransactionClaims, plan_claims: dict[str, object]) -> Transa
 def test_any_replacement_sequence_only_attenuates(
     initial_level: str, include_assurance: bool, act: bool, sequence: list[Step]
 ) -> None:
-    """For any sequence of agent / non-agent replacements:
-
-    scope is non-increasing, min_assurance_level is non-increasing, hop_count rises by exactly
-    one per agent hop and zero per non-agent hop, and originator/txn/sub/aud/act are constant.
-    """
+    """Scope and min_assurance_level never rise, hop_count rises by one per agent hop only, and
+    originator, txn, sub, aud and act never change."""
     limits = AgentLimits(max_hops=100, ordering=ORDERING)
     first = _initial(initial_level, include_assurance, act)
     current = first
@@ -121,27 +118,24 @@ def test_any_replacement_sequence_only_attenuates(
         before, after = current.agentic_ctx, nxt.agentic_ctx
         assert before is not None
         assert after is not None
-        # scope non-increasing
         assert nxt.scope.issubset(current.scope)
-        # min_assurance_level non-increasing (absent == default == lowest)
+        # An absent min_assurance_level ranks as the default, which is the lowest level.
         assert _rank(after.chain_metadata.min_assurance_level) <= _rank(
             before.chain_metadata.min_assurance_level
         )
-        # hop_count: +1 per agent hop, +0 per non-agent hop
         expected = before.chain_metadata.hop_count + (1 if requester is not None else 0)
         assert after.chain_metadata.hop_count == expected
         if requester is None:
             assert after == before
         else:
             assert after.proximate_agent.id == requester.id
-            # the chain minimum can never exceed the requesting agent's own level
+            # The chain minimum never exceeds the requesting agent's own level.
             assert _rank(after.chain_metadata.min_assurance_level) <= _rank(
                 requester.assurance_level
             )
-        # immutables
         assert after.originator == first.agentic_ctx.originator
         assert (nxt.txn, nxt.sub, nxt.aud, nxt.act) == (first.txn, first.sub, first.aud, first.act)
-        # req_wl grows by exactly the requesting workload
+        # req_wl grows by exactly the requesting workload.
         assert nxt.requesting_workloads == (*current.requesting_workloads, f"wl-{index}")
         current = nxt
 

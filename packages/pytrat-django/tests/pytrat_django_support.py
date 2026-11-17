@@ -124,9 +124,6 @@ def build_nothing() -> object:
     return object()
 
 
-# ------------------------------------------------------------------ views
-
-
 def _describe(request: HttpRequest) -> dict[str, object]:
     txn = request.transaction
     bound = current_transaction()

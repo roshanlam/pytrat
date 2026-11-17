@@ -101,8 +101,6 @@ class PyTraT:
         """The validated settings."""
         return self._settings
 
-    # ------------------------------------------------------------------ declaration
-
     def require_transaction(
         self,
         *,
@@ -192,8 +190,6 @@ class PyTraT:
         """True if ``endpoint`` was marked with :meth:`exempt`."""
         return endpoint is not None and self._exempt.get(id(endpoint)) is endpoint
 
-    # ------------------------------------------------------------------ application wiring
-
     def install(self, app: FastAPI) -> None:
         """Register the problem+json error handler and the fail-closed middleware.
 
@@ -241,8 +237,6 @@ class PyTraT:
         if self._engine.jwks is not None:
             await self._engine.jwks.refresh()
         yield
-
-    # ------------------------------------------------------------------ internals
 
     def _assert_covered(self, views: list[RouteView]) -> None:
         unprotected = self._unprotected(views)

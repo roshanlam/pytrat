@@ -114,8 +114,6 @@ class TransactionDependency:
         mode = "inline" if self._inline else ("policy_id" if self._policy_id else "route")
         return f"TransactionDependency(mode={mode!r}, policy_id={self._policy_id!r})"
 
-    # ------------------------------------------------------------------ request path
-
     async def __call__(self, request: Request) -> AsyncIterator[Transaction]:
         """Authorize the request, then keep its transaction bound until the response is done."""
         marker = marker_of(request.scope)
@@ -190,8 +188,6 @@ class TransactionDependency:
             # Nothing here can allow a request: the enforcer verifies the token next and
             # reports (and audits) any failure.
             return
-
-    # ------------------------------------------------------------------ startup
 
     def prepare(self, view: RouteView, *, shapes: RouteShapes) -> None:
         """Resolve and validate the policies for one route that uses this dependency.

@@ -1,7 +1,7 @@
-"""The v0.1 security story, end to end (plan.md §1, proposal §21).
+"""The payment-transfer security story, end to end.
 
 Gateway → TTS → payment-service → ledger-service, all real PyTraT components in-process. These
-tests run the shipped example code, so the demo can never silently stop demonstrating the point.
+tests run the shipped example code, so the demo cannot silently stop demonstrating the point.
 """
 
 from __future__ import annotations

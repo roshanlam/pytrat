@@ -14,11 +14,10 @@ from pytrat.otel import semconv
 type AttributeValue = str | int
 """The only attribute value types this package produces: primitives, never sequences."""
 
-# A compact JWS or JWE (RFC 7515 §7.1, RFC 7516 §7.1) starts with the base64url encoding of a
-# JSON object header: "{" followed by '"' or whitespace encodes to "ey" or "ew". Header plus at
-# least one more dot-separated segment is enough to treat the string as a token. Standard-alphabet
-# characters are accepted too, so a sloppily re-encoded token is still caught. Searched, not
-# matched, so a token embedded in a longer string ("Bearer eyJ...") is caught as well.
+# A compact JWS or JWE (RFC 7515 §7.1, RFC 7516 §7.1) starts with a base64url JSON header, so
+# "ey" or "ew"; a header plus one more dot-separated segment counts as a token. The standard
+# base64 alphabet is accepted so re-encoded tokens are caught, and the pattern is searched so a
+# token inside a longer string ("Bearer eyJ...") is caught too.
 _JOSE_SHAPE: Final = re.compile(r"e[yw][A-Za-z0-9_\-+/=]{8,}\.[A-Za-z0-9_\-+/=]*\.")
 
 _REDACTED_DETAIL_KEY: Final = semconv.DETAIL_PREFIX + "*"

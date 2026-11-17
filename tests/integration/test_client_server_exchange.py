@@ -1,7 +1,7 @@
-"""The real exchange client against the real reference TTS, in-process (txn-tokens-11 §11, §13.15).
+"""The exchange client against the reference TTS, in-process (txn-tokens-11 §11, §13.15).
 
 No mocks: the client signs RFC 7523 assertions, the TTS authenticates them, validates the subject
-access token, applies issuance policy, signs, and the client verifies the result against the
+access token, applies issuance policy and signs, and the client verifies the result against the
 TTS's published JWKS.
 """
 

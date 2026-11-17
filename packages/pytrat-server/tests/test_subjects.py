@@ -217,7 +217,7 @@ def test_unsigned_json_disabled_for_unlisted_workload(unsigned):
 
 
 def test_self_signed_subject_cannot_claim_a_delegated_agent(self_signed, keys):
-    """Security review #3 / PyTraT P28: a requester-asserted act could forge an agent identity."""
+    """PyTraT profile P28: a requester-asserted act could forge an agent identity."""
     token = self_jwt(keys["api-gateway"], act={"sub": "trusted-agent"})
     assert invalid(self_signed, token).reason is ReasonCode.ISSUANCE_NOT_AUTHORIZED
 

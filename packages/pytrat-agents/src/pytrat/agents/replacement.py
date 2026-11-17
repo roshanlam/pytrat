@@ -1,12 +1,11 @@
 """Pure agent-chain computation for issuance and replacement (agent-profile-03 §3.3, §4.2).
 
-The reference TTS (``pytrat.server``) calls these functions; they do no I/O and sign nothing
-(CLAUDE.md invariant 6). The server is responsible for identifying the requesting workload,
-looking its agent record up in the store, and minting the token from an
-:class:`AgentReplacementPlan`.
+The reference TTS (``pytrat.server``) calls these functions; they do no I/O and sign nothing,
+because only the TTS signs. The server identifies the requesting workload, looks up its agent
+record and mints the token from an :class:`AgentReplacementPlan`.
 
-Invariant 5 holds for every function here: ``txn``, ``sub``, ``aud``, ``act`` and ``originator``
-never change, scope only shrinks, ``min_assurance_level`` only falls and ``hop_count`` only rises.
+Every function here only attenuates: ``txn``, ``sub``, ``aud``, ``act`` and ``originator`` never
+change, scope only shrinks, ``min_assurance_level`` only falls and ``hop_count`` only rises.
 """
 
 from __future__ import annotations
@@ -143,9 +142,6 @@ def initial_agentic_ctx(
         ordering: The deployment's assurance ordering.
         include_assurance: Record ``min_assurance_level`` from the agent's stored level (§3.5).
         attr_store_ref: Optional Agent Attribute Store URI (§3.5.1, informational).
-
-    Returns:
-        The new context.
     """
     identity = AgentIdentity(id=agent.id, session_id=session_id)
     level = ordering.minimum(agent.assurance_level, agent.assurance_level)
@@ -291,10 +287,10 @@ def plan_agent_replacement(
 def assert_replacement_attenuates(
     current: TransactionClaims, replacement: TransactionClaims, limits: AgentLimits
 ) -> None:
-    """Check that ``replacement`` only attenuates ``current`` (CLAUDE.md invariant 5).
+    """Check that ``replacement`` only attenuates ``current``.
 
-    A defence-in-depth check for the server to run on the token it is about to sign, and the
-    oracle for property tests.
+    Defence in depth for the server to run on the token it is about to sign; also the oracle
+    for property tests.
 
     Raises:
         AuthorizationError: ``REPLACEMENT_WIDENS_AUTHORIZATION`` naming the first violated rule.

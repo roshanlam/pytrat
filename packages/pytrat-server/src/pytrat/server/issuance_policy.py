@@ -62,7 +62,7 @@ def value_matches(value: object, json_type: JsonType) -> bool:  # noqa: PLR0911 
     """Return True if ``value`` has exactly ``json_type``.
 
     Strict: ``True`` is not an integer, ``1.0`` is not an integer, and objects and arrays may not
-    contain floats anywhere inside them (CLAUDE.md invariant 9).
+    contain floats anywhere inside them.
     """
     match json_type:
         case JsonType.STRING:

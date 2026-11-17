@@ -48,9 +48,6 @@ def record(**overrides: object) -> AgentRecord:
     return AgentRecord(**fields)  # type: ignore[arg-type]
 
 
-# ---------------------------------------------------------------- AgentRecord
-
-
 def test_record_attributes_are_copied_and_frozen() -> None:
     source = {"tee": "sgx"}
     rec = record(attributes=source)
@@ -65,9 +62,6 @@ def test_record_rejects_empty_id_and_client_id() -> None:
         record(id="")
     with pytest.raises(ConfigurationError):
         record(client_id="")
-
-
-# ---------------------------------------------------------------- in-memory
 
 
 def test_in_memory_lookups() -> None:
@@ -91,9 +85,6 @@ def test_in_memory_rejects_duplicates_and_unknown_levels() -> None:
         InMemoryAgentStore([record(assurance_level="ultra")])
     custom = AssuranceOrdering(("bronze", "gold"))
     assert InMemoryAgentStore([record(assurance_level="gold")], ordering=custom).get("a1")
-
-
-# ---------------------------------------------------------------- YAML
 
 
 def test_yaml_store_loads(tmp_path: Path) -> None:
@@ -146,8 +137,8 @@ def test_yaml_store_rejects_invalid_documents(tmp_path: Path, document: str) -> 
 def test_yaml_store_malformed_content_is_configuration_error(
     tmp_path: Path, content: bytes
 ) -> None:
-    """Regression (found by fuzz/fuzz_agent_registry.py): UnicodeDecodeError, ValueError and
-    RecursionError escaped the loader instead of a configuration error."""
+    """Regression (fuzz/fuzz_agent_registry.py): decode, value and recursion errors escaped the
+    loader instead of becoming a ConfigurationError."""
     path = tmp_path / "agents.yaml"
     path.write_bytes(content)
     with pytest.raises(ConfigurationError) as excinfo:
@@ -159,9 +150,6 @@ def test_yaml_store_unreadable_file_is_dependency_error(tmp_path: Path) -> None:
     with pytest.raises(DependencyError) as excinfo:
         YamlAgentStore(tmp_path / "missing.yaml")
     assert excinfo.value.reason is ReasonCode.DEPENDENCY_UNAVAILABLE
-
-
-# ---------------------------------------------------------------- SQLite
 
 
 def _db(tmp_path: Path, rows: list[tuple[object, ...]], *, schema: str = SQLITE_SCHEMA) -> Path:

@@ -88,7 +88,7 @@ class TestMatching:
 
 
 class TestDenials:
-    """The demo attack and its variants: a compromised intermediary alters bound parameters."""
+    """Attack: a compromised intermediary alters bound parameters."""
 
     def test_tampered_amount_is_rejected(self) -> None:
         reason = denial(ContextBinding.compile(FIELDS), TCTX, {**REQUEST, "amount_minor": 900000})
@@ -167,7 +167,7 @@ class TestDenials:
         )
 
     def test_keys_colliding_after_nfc_smuggle_no_value_past_the_check(self) -> None:
-        """Regression (found by fuzz/fuzz_binding.py): NFC folded two request keys into one.
+        """Regression (fuzz/fuzz_binding.py): NFC folded two request keys into one.
 
         The service reads the precomposed key ("account-EVIL") while the check compared only the
         decomposed one, which matched the authorized value.
@@ -184,7 +184,7 @@ class TestDenials:
         assert excinfo.value.reason is ReasonCode.CLAIM_INVALID
 
     def test_deeply_nested_request_value_fails_closed(self) -> None:
-        """Regression (found by fuzz/fuzz_binding.py): RecursionError escaped the check."""
+        """Regression (fuzz/fuzz_binding.py): RecursionError escaped the check."""
         deep: object = 1
         for _ in range(5000):
             deep = [deep]

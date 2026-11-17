@@ -33,9 +33,6 @@ def _ctx(payload: dict[str, object]) -> AgenticContext:
     return AgenticContext.model_validate(payload)
 
 
-# ---------------------------------------------------------------- AgentLimits
-
-
 @pytest.mark.parametrize("max_hops", [0, -1, 10_001, True])
 def test_limits_reject_bad_max_hops(max_hops: int) -> None:
     with pytest.raises(ConfigurationError):
@@ -47,9 +44,6 @@ def test_limits_reject_unknown_default_assurance() -> None:
         AgentLimits(max_hops=3, default_assurance="ultra")
     custom = AssuranceOrdering(("bronze", "gold"))
     assert AgentLimits(max_hops=3, ordering=custom, default_assurance="bronze").max_hops == 3
-
-
-# ---------------------------------------------------------------- initial issuance
 
 
 def test_initial_ctx_hop_one_and_originator_is_proximate(
@@ -76,9 +70,6 @@ def test_initial_ctx_without_assurance(internal: AgentRecord, ordering: Assuranc
     ctx = initial_agentic_ctx(internal, ordering=ordering, include_assurance=False)
     assert ctx.chain_metadata.min_assurance_level is None
     assert ctx.proximate_agent.session_id is None
-
-
-# ---------------------------------------------------------------- next_agentic_ctx
 
 
 def test_agent_hop_updates_proximate_and_increments(
@@ -185,9 +176,6 @@ def test_agent_without_context_starts_chain_when_allowed(internal: AgentRecord) 
     assert ctx.chain_metadata.min_assurance_level == "unverified"
 
 
-# ---------------------------------------------------------------- req_wl
-
-
 def test_append_workload() -> None:
     """agent-profile-03 §3.3.1: req_wl is appended with a comma."""
     assert append_workload("apigateway", "billing") == "apigateway,billing"
@@ -199,9 +187,6 @@ def test_append_workload_rejects_ambiguous_ids(workload: str) -> None:
     with pytest.raises(AuthorizationError) as excinfo:
         append_workload("apigateway", workload)
     assert excinfo.value.reason is ReasonCode.ISSUANCE_NOT_AUTHORIZED
-
-
-# ---------------------------------------------------------------- plan
 
 
 def test_plan_for_agent_hop(claims: Claims, internal: AgentRecord, limits: AgentLimits) -> None:
@@ -275,9 +260,6 @@ def test_plan_agent_on_token_without_context_is_denied(
     assert excinfo.value.reason is ReasonCode.AGENT_CONTEXT_MISSING
 
 
-# ---------------------------------------------------------------- attenuation oracle
-
-
 def _replace(current: TransactionClaims, **changes: object) -> TransactionClaims:
     payload = current.to_payload()
     payload.update(changes)
@@ -345,9 +327,6 @@ def test_attenuation_rejects_chain_widening(
 def test_attenuation_allows_tokens_without_context(claims: Claims, limits: AgentLimits) -> None:
     current = claims(agentic_ctx=None)
     assert_replacement_attenuates(current, current, limits)
-
-
-# ---------------------------------------------------------------- egress
 
 
 def test_strip_for_egress_removes_attr_store_ref(ctx_payload: Ctx) -> None:

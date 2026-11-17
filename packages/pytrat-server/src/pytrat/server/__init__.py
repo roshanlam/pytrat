@@ -4,7 +4,7 @@ Implements the token endpoint of ``draft-ietf-oauth-transaction-tokens-11`` (RFC
 exchange with RFC 7523 workload authentication), replacement (§13.15), a hash-chained issuance
 log, and the experimental agent profile via :mod:`pytrat.agents`.
 
-This is the only PyTraT package that holds signing keys (CLAUDE.md invariant 6).
+This is the only PyTraT package that holds signing keys.
 """
 
 from pytrat.server.agent_profile import AgentProfile

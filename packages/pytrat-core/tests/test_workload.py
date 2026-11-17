@@ -145,7 +145,7 @@ class TestWorkloadJwt:
             WorkloadJwtAuthenticator(key.key_set(), audience="x")  # type: ignore[arg-type]
 
     def test_workload_cannot_impersonate_another_workload(self, key, clock) -> None:
-        """Security review #1: a trusted workload signs a JWT claiming another workload's id."""
+        """Attack: a trusted workload signs a JWT claiming another workload's id."""
         gateway = generate_test_key("ES256", kid="gateway-1")
         auth = authenticator(key, clock, **{"api-gateway": gateway})
         forged = workload_jwt(gateway, clock, sub="payment-service")

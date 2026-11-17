@@ -72,7 +72,7 @@ class AgentRecord:
             raise ConfigurationError("agent record id must be non-empty")
         if self.client_id == "":
             raise ConfigurationError("agent record client_id must be non-empty when set")
-        # Copy and freeze: a caller keeping a reference to the original dict cannot mutate us.
+        # Copy and freeze so the caller's dict cannot mutate the record.
         object.__setattr__(self, "attributes", MappingProxyType(dict(self.attributes)))
 
 
@@ -141,8 +141,6 @@ class InMemoryAgentStore:
         return len(self._by_id)
 
 
-# ---------------------------------------------------------------- YAML
-
 _Text = Annotated[str, StringConstraints(min_length=1, max_length=2048)]
 
 
@@ -204,9 +202,8 @@ def _parse_yaml(raw_text: str) -> list[AgentRecord]:
     try:
         raw_document = yaml.safe_load(raw_text)
     except Exception:  # noqa: BLE001 - re-raised as a configuration error, never swallowed
-        # PyYAML's constructors raise ValueError, IndexError, KeyError or AttributeError for
-        # tagged scalars such as "!!int", "!!bool x" or 2001-13-14, and deep nesting exhausts its
-        # recursive composer (RecursionError). Any of them means the document is invalid.
+        # PyYAML raises ValueError, IndexError, KeyError or AttributeError for bad tagged scalars
+        # ("!!int", 2001-13-14) and RecursionError for deep nesting; all mean "invalid".
         raise ConfigurationError("agent store file is not valid YAML") from None
     try:
         document = _YamlDocument.model_validate(raw_document)
@@ -228,8 +225,6 @@ def _parse_yaml(raw_text: str) -> list[AgentRecord]:
         for agent in document.agents
     ]
 
-
-# ---------------------------------------------------------------- SQLite
 
 #: Schema expected by :class:`SqliteAgentStore`. ``attributes`` is a JSON object of strings.
 SQLITE_SCHEMA: Final = """

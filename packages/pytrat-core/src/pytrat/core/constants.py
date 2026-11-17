@@ -1,7 +1,7 @@
 """Protocol constants.
 
-Every protocol string used anywhere in PyTraT is defined here, so that a draft revision that renames
-one produces a single, reviewable change.
+Every protocol string PyTraT uses is defined here, so a draft revision that renames one is a
+one-line change.
 """
 
 from __future__ import annotations

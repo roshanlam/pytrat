@@ -98,9 +98,6 @@ def _audit_to_stdout() -> None:
         audit.propagate = False
 
 
-# ---------------------------------------------------------------- uvicorn factories
-
-
 def tts_app() -> FastAPI:
     """The reference TTS, configured from the environment."""
     from payment_demo.services import create_tts  # noqa: PLC0415 - keep healthchecks light
@@ -137,9 +134,6 @@ def ledger_app() -> FastAPI:
 
     _audit_to_stdout()
     return create_ledger(lab_from_env(), audit=LoggingSink())
-
-
-# ---------------------------------------------------------------- commands
 
 
 def init() -> int:

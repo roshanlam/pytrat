@@ -131,8 +131,8 @@ class TokenEndpoint:
         self._verifier = txn_token_verifier(components.settings, own_keys, components.clock)
         self._audit = AuditRecorder(components.log, components.sink)
         # One lock per txn makes count -> plan -> sign -> record atomic within this process, so
-        # concurrent replacements cannot all pass the replacement limit (security review #5).
-        # Multi-instance deployments additionally need the shared IssuanceLog to enforce it.
+        # concurrent replacements cannot all pass the replacement limit. Multi-instance
+        # deployments also need the shared IssuanceLog to enforce it.
         self._replacement_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = (
             weakref.WeakValueDictionary()
         )
@@ -174,9 +174,9 @@ class TokenEndpoint:
             await self._record_rejection(error, progress)
             raise error from None
         except Exception:
-            # A collaborator broke its contract (e.g. an Agent Attribute Store raising a driver
-            # error instead of DependencyError). The request is refused by the app's last line
-            # of defence; record that refusal so every outcome reaches the issuance log.
+            # A collaborator broke its contract (e.g. a store raising a driver error instead of
+            # DependencyError). The app turns this into a 500; record the refusal first so every
+            # outcome reaches the issuance log.
             await self._record_rejection(_INTERNAL_ERROR, progress)
             raise
 
