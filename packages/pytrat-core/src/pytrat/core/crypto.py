@@ -69,11 +69,16 @@ def _normalise_typ(typ: str) -> str:
     return lowered.removeprefix("application/")
 
 
-def peek_header(raw_token: str, *, max_bytes: int) -> UnverifiedHeader:
+def peek_header(
+    raw_token: str,
+    *,
+    max_bytes: int,
+    allowed_typ: frozenset[str] | None = frozenset({TXN_TOKEN_TYP}),
+) -> UnverifiedHeader:
     """Check token shape and the JOSE header without verifying the signature.
 
     This is the only function in PyTraT that reads an unverified token, and it returns only
-    ``alg`` and ``kid``.
+    ``alg`` and ``kid``. ``allowed_typ=None`` skips the ``typ`` check.
 
     Raises:
         TokenError: ``TOKEN_MALFORMED`` for anything that is not a compact JWS of acceptable size,
@@ -96,14 +101,17 @@ def peek_header(raw_token: str, *, max_bytes: int) -> UnverifiedHeader:
         raise TokenError(ReasonCode.TOKEN_MALFORMED, "token header is not valid JSON") from None
     if not isinstance(header, Mapping):
         raise TokenError(ReasonCode.TOKEN_MALFORMED, "token header is not a JSON object")
-    return _check_header(cast("Mapping[str, object]", header))
+    return _check_header(cast("Mapping[str, object]", header), allowed_typ)
 
 
-def _check_header(header: Mapping[str, object]) -> UnverifiedHeader:
-    typ = header.get("typ")
-    # txn-tokens-11 §9.1: typ MUST be present and MUST be txntoken+jwt.
-    if not isinstance(typ, str) or _normalise_typ(typ) != TXN_TOKEN_TYP:
-        raise TokenError(ReasonCode.TOKEN_TYPE_INVALID, "header typ is not txntoken+jwt")
+def _check_header(
+    header: Mapping[str, object], allowed_typ: frozenset[str] | None
+) -> UnverifiedHeader:
+    if allowed_typ is not None:
+        typ = header.get("typ")
+        # txn-tokens-11 §9.1: typ MUST be present and MUST be txntoken+jwt.
+        if not isinstance(typ, str) or _normalise_typ(typ) not in allowed_typ:
+            raise TokenError(ReasonCode.TOKEN_TYPE_INVALID, "header typ is not accepted")
     alg = header.get("alg")
     if not isinstance(alg, str) or alg in FORBIDDEN_ALGORITHMS or alg not in SUPPORTED_ALGORITHMS:
         raise TokenError(ReasonCode.ALGORITHM_NOT_ALLOWED, "header alg is not permitted")

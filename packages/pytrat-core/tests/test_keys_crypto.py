@@ -180,3 +180,39 @@ class TestSigning:
         body = token.split(".")[1]
         decoded = base64.urlsafe_b64decode(body + "=" * (-len(body) % 4))
         assert decoded == json.dumps({"a": 2, "b": 1}, separators=(",", ":")).encode()
+
+
+class TestVerifyJws:
+    def test_generic_jwt_with_custom_typ(self) -> None:
+        from pytrat.core import ReasonCode, verify_jws
+
+        key = generate_test_key("ES256")
+        token = sign_compact(
+            {"iss": "client"}, key.private_key, alg="ES256", kid=key.kid, typ="at+jwt"
+        )
+        result = verify_jws(
+            token, key.key_set(), algorithms=frozenset({"ES256"}), allowed_typ=frozenset({"at+jwt"})
+        )
+        assert result.payload == {"iss": "client"}
+        assert result.key.kid == key.kid
+        assert (
+            verify_jws(token, key.key_set(), algorithms=frozenset({"ES256"}), allowed_typ=None).alg
+            == "ES256"
+        )
+        with pytest.raises(TokenError) as excinfo:
+            verify_jws(token, key.key_set(), algorithms=frozenset({"ES256"}))
+        assert excinfo.value.reason is ReasonCode.TOKEN_TYPE_INVALID
+
+    def test_typ_check_skipped_still_rejects_forbidden_algorithms(self) -> None:
+        from pytrat.core import ReasonCode, verify_jws
+        from pytrat.core.testing import TokenFactory
+
+        factory = TokenFactory.create()
+        with pytest.raises(TokenError) as excinfo:
+            verify_jws(
+                factory.hmac_with_public_key(),
+                factory.key.key_set(),
+                algorithms=frozenset({"ES256"}),
+                allowed_typ=None,
+            )
+        assert excinfo.value.reason is ReasonCode.ALGORITHM_NOT_ALLOWED

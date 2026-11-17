@@ -33,6 +33,7 @@ from pytrat.core.errors import (
     ReasonCode,
     TokenError,
 )
+from pytrat.core.jws import VerifiedJws, verify_jws
 from pytrat.core.keys import KeyProvider, StaticKeySet, VerificationKey
 from pytrat.core.replay import InMemoryReplayStore, ReplayStore, replay_key
 from pytrat.core.scopes import Scope
@@ -77,9 +78,11 @@ __all__ = [
     "TokenVerifier",
     "TransactionClaims",
     "VerificationKey",
+    "VerifiedJws",
     "VerifiedToken",
     "VerifierSettings",
     "parse_claims",
     "replay_key",
     "token_digest",
+    "verify_jws",
 ]

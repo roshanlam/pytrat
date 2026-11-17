@@ -27,8 +27,8 @@ from typing import Final
 from pytrat.core.claims import TransactionClaims, parse_claims
 from pytrat.core.clock import Clock, SystemClock
 from pytrat.core.constants import DEFAULT_ALGORITHMS, FORBIDDEN_ALGORITHMS, SUPPORTED_ALGORITHMS
-from pytrat.core.crypto import peek_header, verify_signature
 from pytrat.core.errors import ConfigurationError, ReasonCode, TokenError
+from pytrat.core.jws import verify_jws
 from pytrat.core.keys import KeyProvider, VerificationKey
 from pytrat.core.secret import SecretToken
 
@@ -148,24 +148,19 @@ class TokenVerifier:
             TokenError: With the reason for the first failed check.
         """
         settings = self._settings
-        header = peek_header(raw_token, max_bytes=settings.max_token_bytes)
-        if settings.cache_size:
+        if settings.cache_size and len(raw_token) <= settings.max_token_bytes:
             cached = self._cached(raw_token)
             if cached is not None:
                 return cached
 
-        if header.alg not in settings.algorithms:
-            raise TokenError(ReasonCode.ALGORITHM_NOT_ALLOWED, "algorithm is not in the allowlist")
-        if header.kid is None and settings.require_kid:
-            raise TokenError(ReasonCode.TOKEN_MALFORMED, "header kid is required")
-
-        key = self._keys.get(header.kid)
-        if key is None:
-            raise TokenError(ReasonCode.KEY_UNKNOWN, "no trusted key matches the token kid")
-        if header.alg not in key.algorithms:
-            raise TokenError(ReasonCode.ALGORITHM_NOT_ALLOWED, "algorithm does not match the key")
-
-        payload = verify_signature(raw_token, key.public_key, header.alg)
+        verified = verify_jws(
+            raw_token,
+            self._keys,
+            algorithms=settings.algorithms,
+            require_kid=settings.require_kid,
+            max_bytes=settings.max_token_bytes,
+        )
+        key, payload = verified.key, verified.payload
         claims = parse_claims(payload)
         self._check_claims(claims)
 
@@ -173,7 +168,7 @@ class TokenVerifier:
             claims=claims,
             forwardable=SecretToken(raw_token),
             kid=key.kid,
-            alg=header.alg,
+            alg=verified.alg,
             _seal=_SEAL,
         )
         if settings.cache_size:
