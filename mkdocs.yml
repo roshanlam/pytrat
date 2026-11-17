@@ -136,6 +136,11 @@ nav:
   - Interoperability:
       - Tokenetes: interop/tokenetes.md
   - Benchmarks: benchmarks.md
+  - Blog:
+      - blog/index.md
+      - "A $100 transfer and $9,000": blog/transaction-tokens-100-to-9000.md
+      - Building a security library: blog/building-a-security-library.md
+      - Agent trust laundering: blog/agent-trust-laundering.md
   - API reference:
       - api/index.md
       - pytrat.core: api/core.md
