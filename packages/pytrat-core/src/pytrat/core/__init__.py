@@ -34,6 +34,7 @@ from pytrat.core.errors import (
     PyTraTError,
     ReasonCode,
     TokenError,
+    problem_details,
 )
 from pytrat.core.jws import VerifiedJws, verify_jws
 from pytrat.core.keys import KeyProvider, StaticKeySet, VerificationKey
@@ -102,6 +103,7 @@ __all__ = [
     "WorkloadIdentity",
     "WorkloadJwtAuthenticator",
     "parse_claims",
+    "problem_details",
     "replay_key",
     "strict_loads",
     "token_digest",

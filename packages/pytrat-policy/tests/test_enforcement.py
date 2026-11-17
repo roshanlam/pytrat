@@ -173,3 +173,20 @@ def test_derived_transforms_are_audited(factory) -> None:
     assert service.service == "ledger"
     service.enforce(policy, headers(raw), {"amount_major": 100})
     assert sink.events[0].detail["transforms"] == "major-to-minor"
+
+
+def test_denials_after_verification_carry_transaction_id(factory, policy) -> None:
+    raw = factory.mint(txn="txn-42", tctx=BODY)
+    error = denied(
+        lambda: enforcer(factory, MemorySink()).enforce(policy, headers(raw), {}),
+        AuthorizationError,
+    )
+    assert error.transaction_id == "txn-42"
+
+
+def test_token_failures_never_carry_transaction_id(factory, policy) -> None:
+    raw = factory.mint(txn="txn-42", aud="elsewhere")
+    error = denied(
+        lambda: enforcer(factory, MemorySink()).enforce(policy, headers(raw), BODY), TokenError
+    )
+    assert error.transaction_id is None

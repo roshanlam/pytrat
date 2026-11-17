@@ -1,0 +1,9 @@
+version: 1
+trust_domain: payments.internal
+resources:
+  - name: ledger-transfer
+    method: POST
+    path: /internal/transfer
+    allowed_scopes: [payments.transfer]
+    allowed_callers: [payment-service]
+    bind_context: [source_account, destination_account, amount_minor, currency]

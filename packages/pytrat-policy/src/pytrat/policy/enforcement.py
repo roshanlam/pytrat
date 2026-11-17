@@ -150,6 +150,8 @@ class TransactionEnforcer:
                 )
             )
         except PyTraTError as error:
+            if token is not None:
+                error.transaction_id = token.claims.txn
             self._emit(
                 EventType.AUTHORIZATION_DENIED, policy, token=token, caller=caller, error=error
             )

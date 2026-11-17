@@ -221,3 +221,27 @@ def test_clocks() -> None:
     clock.set(1.0)
     assert clock.now() == 1.0
     assert SystemClock().now() > 1_700_000_000
+
+
+class TestProblemDetails:
+    def test_document_and_titles(self) -> None:
+        from pytrat.core import AuthenticationError, DependencyError, problem_details
+
+        error = AuthorizationError(
+            ReasonCode.TRANSACTION_CONTEXT_MISMATCH, "'amount_minor': differs"
+        )
+        assert problem_details(error) == {
+            "type": "urn:pytrat:problem:TRANSACTION_CONTEXT_MISMATCH",
+            "title": "Transaction not authorized",
+            "status": 403,
+            "reason_code": "TRANSACTION_CONTEXT_MISMATCH",
+        }
+        error.transaction_id = "txn-1"
+        document = problem_details(error, include_detail=True)
+        assert document["transaction_id"] == "txn-1"
+        assert document["detail"] == "'amount_minor': differs"
+        assert problem_details(TokenError(ReasonCode.TOKEN_EXPIRED, "x"))["status"] == 401
+        assert problem_details(AuthenticationError(ReasonCode.WORKLOAD_UNAUTHENTICATED, "x"))[
+            "title"
+        ]
+        assert problem_details(DependencyError("x"))["status"] == 503
