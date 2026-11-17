@@ -12,6 +12,7 @@ from pytrat.core import (
     TrustedProxyHeaderAuthenticator,
     WorkloadIdentity,
     WorkloadJwtAuthenticator,
+    WorkloadKeys,
 )
 from pytrat.core.clock import FrozenClock
 from pytrat.core.crypto import sign_compact
@@ -48,8 +49,11 @@ def workload_jwt(
     return sign_compact(claims, key.private_key, alg=key.alg, kid=key.kid, typ=typ)
 
 
-def authenticator(key: TestKey, clock: FrozenClock) -> WorkloadJwtAuthenticator:
-    return WorkloadJwtAuthenticator(key.key_set(), audience=AUDIENCE, clock=clock)
+def authenticator(key: TestKey, clock: FrozenClock, **others: TestKey) -> WorkloadJwtAuthenticator:
+    keys = WorkloadKeys(
+        {"payment-service": key.key_set(), **{k: v.key_set() for k, v in others.items()}}
+    )
+    return WorkloadJwtAuthenticator(keys, audience=AUDIENCE, clock=clock)
 
 
 def unauthenticated(auth, request: InboundRequest) -> None:
@@ -134,9 +138,51 @@ class TestWorkloadJwt:
         request = InboundRequest((("Workload-Identity", token), ("workload-identity", token)))
         unauthenticated(authenticator(key, clock), request)
 
-    def test_requires_audience(self, key) -> None:
+    def test_requires_audience_and_owned_keys(self, key) -> None:
         with pytest.raises(ConfigurationError):
-            WorkloadJwtAuthenticator(key.key_set(), audience="")
+            WorkloadJwtAuthenticator(WorkloadKeys({"a": key.key_set()}), audience="")
+        with pytest.raises(ConfigurationError):
+            WorkloadJwtAuthenticator(key.key_set(), audience="x")  # type: ignore[arg-type]
+
+    def test_workload_cannot_impersonate_another_workload(self, key, clock) -> None:
+        """Security review #1: a trusted workload signs a JWT claiming another workload's id."""
+        gateway = generate_test_key("ES256", kid="gateway-1")
+        auth = authenticator(key, clock, **{"api-gateway": gateway})
+        forged = workload_jwt(gateway, clock, sub="payment-service")
+        unauthenticated(auth, InboundRequest.from_mapping({"Workload-Identity": forged}))
+        honest = workload_jwt(gateway, clock, sub="api-gateway")
+        identity = auth.authenticate(InboundRequest.from_mapping({"Workload-Identity": honest}))
+        assert identity == WorkloadIdentity("api-gateway", "workload-jwt")
+
+    def test_mismatched_issuer_is_rejected(self, key, clock) -> None:
+        token = workload_jwt(key, clock, iss="api-gateway")
+        unauthenticated(
+            authenticator(key, clock), InboundRequest.from_mapping({"Workload-Identity": token})
+        )
+        matching = workload_jwt(key, clock, iss="payment-service")
+        assert authenticator(key, clock).authenticate(
+            InboundRequest.from_mapping({"Workload-Identity": matching})
+        )
+
+
+class TestWorkloadKeys:
+    def test_kid_cannot_belong_to_two_workloads(self) -> None:
+        shared = generate_test_key("ES256", kid="shared")
+        with pytest.raises(ConfigurationError, match="two workloads"):
+            WorkloadKeys({"a": shared.key_set(), "b": [shared.verification_key]})
+
+    @pytest.mark.parametrize("workloads", [{}, {"": []}, {"a": "not-keys"}])
+    def test_invalid_registries(self, workloads) -> None:
+        with pytest.raises(ConfigurationError):
+            WorkloadKeys(workloads)
+
+    def test_lookup(self) -> None:
+        key = generate_test_key("ES256", kid="k1")
+        keys = WorkloadKeys({"svc": [key.verification_key]})
+        assert keys.get("k1") is not None
+        assert keys.get(None) is None
+        assert keys.owner("k1") == "svc"
+        assert keys.workloads == {"svc"}
 
 
 class TestTrustedProxy:
@@ -178,7 +224,7 @@ class TestTrustedProxy:
 class TestFirstMatch:
     def test_order_and_errors(self, key, clock) -> None:
         proxy = TrustedProxyHeaderAuthenticator(header="X-Id", trusted_proxies=["10.0.0.0/8"])
-        chain = FirstMatchAuthenticator(proxy, authenticator(key, clock))
+        chain = FirstMatchAuthenticator(proxy, authenticator(key, clock))  # payment-service key
         jwt_request = InboundRequest.from_mapping({"Workload-Identity": workload_jwt(key, clock)})
         assert chain.authenticate(jwt_request).method == "workload-jwt"  # type: ignore[union-attr]
         assert chain.authenticate(InboundRequest(())) is None

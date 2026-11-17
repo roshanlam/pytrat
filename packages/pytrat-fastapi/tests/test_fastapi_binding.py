@@ -319,3 +319,21 @@ async def test_unprepared_route_fails_closed(kit: Kit) -> None:
     assert response.status_code == 500
     assert response.json()["reason_code"] == ReasonCode.POLICY_INVALID
     assert not seen
+
+
+async def test_form_body_cannot_be_bound_and_is_refused_at_startup(kit: Kit) -> None:
+    """Security review #4: a bound form body used to 500 on every request; now refused up front."""
+    from fastapi import Form
+
+    pytrat = kit.pytrat()
+    app = FastAPI()
+    dependency = pytrat.require_transaction(scope="payments.transfer", bind_fields=["amount_minor"])
+
+    @app.post("/internal/form")
+    async def form(
+        amount_minor: Annotated[int, Form()], txn: Annotated[Transaction, Depends(dependency)]
+    ) -> None:
+        raise AssertionError("must not run")
+
+    with pytest.raises(ConfigurationError, match="form and file bodies"):
+        pytrat.prepare(app)

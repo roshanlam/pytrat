@@ -50,6 +50,7 @@ from pytrat.core.workload import (
     WorkloadAuthenticator,
     WorkloadIdentity,
     WorkloadJwtAuthenticator,
+    WorkloadKeys,
 )
 
 __all__ = [
@@ -104,6 +105,7 @@ __all__ = [
     "WorkloadAuthenticator",
     "WorkloadIdentity",
     "WorkloadJwtAuthenticator",
+    "WorkloadKeys",
     "parse_claims",
     "problem_details",
     "replay_key",

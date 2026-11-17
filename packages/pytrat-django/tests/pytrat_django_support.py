@@ -19,6 +19,7 @@ from pytrat.core import (
     InMemoryReplayStore,
     MemorySink,
     WorkloadJwtAuthenticator,
+    WorkloadKeys,
 )
 from pytrat.core.crypto import sign_compact
 from pytrat.core.testing import TestKey, TokenFactory, generate_test_key
@@ -27,6 +28,7 @@ from pytrat.policy import TransactionEnforcer
 
 POLICY_PATH = Path(__file__).with_name("policy.yaml")
 SERVICE = "ledger"
+CALLERS = ("payment-service", "api-gateway", "intruder", "intruder-service", "reporting-service")
 TRANSFER_FIELDS = ["source_account", "destination_account", "amount_minor", "currency"]
 
 
@@ -35,21 +37,31 @@ class World:
     """Keys, sink and enforcer for one test."""
 
     factory: TokenFactory = field(default_factory=TokenFactory.create)
-    caller_key: TestKey = field(default_factory=generate_test_key)
+    caller_keys: dict[str, TestKey] = field(
+        default_factory=lambda: {
+            name: generate_test_key("ES256", kid=f"{name}-key") for name in CALLERS
+        }
+    )
     sink: MemorySink = field(default_factory=MemorySink)
+
+    @property
+    def caller_key(self) -> TestKey:
+        return self.caller_keys["payment-service"]
 
     def enforcer(self) -> TransactionEnforcer:
         return TransactionEnforcer(
             service=SERVICE,
             verify=self.factory.verifier(),
             authenticator=WorkloadJwtAuthenticator(
-                self.caller_key.key_set(), audience=SERVICE, clock=self.factory.clock
+                WorkloadKeys({name: key.key_set() for name, key in self.caller_keys.items()}),
+                audience=SERVICE,
+                clock=self.factory.clock,
             ),
             audit=self.sink,
         )
 
     def workload_jwt(self, subject: str = "payment-service", key: TestKey | None = None) -> str:
-        signer = key or self.caller_key
+        signer = key or self.caller_keys.get(subject, self.caller_key)
         now = int(self.factory.clock.now())
         return sign_compact(
             {"sub": subject, "aud": SERVICE, "iat": now, "exp": now + 60},

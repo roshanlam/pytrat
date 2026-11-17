@@ -14,7 +14,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pytrat.core import SecretToken, StaticKeySet, VerificationKey
+from pytrat.core import SecretToken, StaticKeySet, VerificationKey, WorkloadKeys
 from pytrat.core.crypto import PrivateKey, generate_private_key, private_key_to_pem, sign_compact
 
 TRUST_DOMAIN = "payments.internal"
@@ -79,9 +79,17 @@ class Lab:
         """The TTS verification keys every resource service trusts."""
         return StaticKeySet.from_jwks(self.public_jwks("tts"))
 
-    def workload_keys(self) -> StaticKeySet:
-        """Keys resource services trust for workload authentication."""
-        return StaticKeySet.from_jwks(self.public_jwks("api-gateway", "payment-service"))
+    def workload_keys(self) -> WorkloadKeys:
+        """Keys resource services trust for workload authentication, by owning workload.
+
+        A workload JWT authenticates only the workload that owns the verifying key.
+        """
+        return WorkloadKeys(
+            {
+                name: StaticKeySet.from_jwks(self.public_jwks(name))
+                for name in ("api-gateway", "payment-service")
+            }
+        )
 
     def user_access_token(self, subject: str = "user:123") -> SecretToken:
         """An access token the identity provider issued after the user logged in."""

@@ -33,6 +33,10 @@ This document states what it defends against, what it assumes, and what it does 
 | Parser differentials (duplicate JSON keys) | Duplicate members rejected everywhere | core tests |
 | Replay within a token's lifetime | Opt-in single-use per operation; short lifetimes | policy tests |
 | Unauthorised caller reuses a captured token | Independent workload authentication + `allowed_callers` | fastapi tests |
+| One trusted workload impersonates another | Workload identity is the owner of the verifying key, never a claim | `packages/pytrat-core/tests/test_workload.py` |
+| Workload forges an agent identity via a self-asserted subject | `act` refused in self-signed/unsigned subjects | server `test_subjects.py` |
+| Agent constraints bypassed with a plain token | Assurance/originator constraints deny tokens without `agentic_ctx` | policy `test_evaluate.py` |
+| Concurrent replacements exceed the replacement limit | Per-`txn` lock around count → sign → record | server `test_replacement.py` |
 | Forgotten route protection | ASGI middleware fails closed under a protected prefix; startup route-coverage check | fastapi tests |
 | Token sent to an attacker host | Outbound allowlist checked before connecting; redirects never followed | client tests |
 | Token leaks into logs | Tokens wrapped in `SecretToken`; audit carries only digests; tests scan logs for JWS shapes | all suites |

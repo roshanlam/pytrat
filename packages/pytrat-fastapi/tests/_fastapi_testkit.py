@@ -10,7 +10,7 @@ import pytest
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel, ConfigDict
 
-from pytrat.core import MemorySink, WorkloadJwtAuthenticator
+from pytrat.core import MemorySink, WorkloadJwtAuthenticator, WorkloadKeys
 from pytrat.core.crypto import sign_compact
 from pytrat.core.testing import TestKey, TokenFactory, generate_test_key
 from pytrat.fastapi import PyTraT, Transaction
@@ -38,16 +38,27 @@ class StrictTransfer(Transfer):
     model_config = ConfigDict(strict=True)
 
 
+CALLERS = ("payment-service", "api-gateway", "intruder", "intruder-service", "reporting-service")
+
+
 @dataclass
 class Kit:
     factory: TokenFactory
-    workload_key: TestKey
+    caller_keys: dict[str, TestKey]
     sink: MemorySink = field(default_factory=MemorySink)
+
+    @property
+    def workload_key(self) -> TestKey:
+        return self.caller_keys["payment-service"]
+
+    def workload_keys(self) -> WorkloadKeys:
+        """Each caller authenticates with its own key; identity comes from key ownership."""
+        return WorkloadKeys({name: key.key_set() for name, key in self.caller_keys.items()})
 
     def workload_jwt(
         self, sub: str = "payment-service", *, aud: str = LEDGER, key: TestKey | None = None
     ) -> str:
-        signer = key or self.workload_key
+        signer = key or self.caller_keys.get(sub, self.workload_key)
         now = int(self.factory.clock.now())
         claims = {"sub": sub, "aud": aud, "iat": now, "exp": now + 60}
         return sign_compact(
@@ -70,7 +81,7 @@ class Kit:
             "service": LEDGER,
             "verifier": self.factory.verifier(),
             "authenticator": WorkloadJwtAuthenticator(
-                self.workload_key.key_set(), audience=LEDGER, clock=self.factory.clock
+                self.workload_keys(), audience=LEDGER, clock=self.factory.clock
             ),
             "audit": self.sink,
             "protected_prefixes": ("/internal",),
@@ -81,7 +92,8 @@ class Kit:
 
 @pytest.fixture
 def kit() -> Kit:
-    return Kit(factory=TokenFactory.create(), workload_key=generate_test_key("ES256"))
+    keys = {name: generate_test_key("ES256", kid=f"{name}-key") for name in CALLERS}
+    return Kit(factory=TokenFactory.create(), caller_keys=keys)
 
 
 @asynccontextmanager

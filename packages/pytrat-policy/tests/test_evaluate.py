@@ -271,8 +271,29 @@ def test_unlisted_originator_is_denied_agent_not_allowed(mint: Mint) -> None:
     assert_denied(transfer_policy(agents=AGENTS), request(token), ReasonCode.AGENT_NOT_ALLOWED)
 
 
-def test_missing_agent_context_allowed_unless_required(mint: Mint) -> None:
-    assert transfer_policy(agents=AGENTS).evaluate(request(mint())).allowed
+@pytest.mark.parametrize(
+    "requirements",
+    [
+        AgentRequirements(enabled=True, minimum_assurance="high"),
+        AgentRequirements(enabled=True, allowed_originators=frozenset({"trusted-agent"})),
+        AGENTS,
+    ],
+)
+def test_agent_constraints_cannot_be_bypassed_by_omitting_agent_context(
+    mint: Mint, requirements: AgentRequirements
+) -> None:
+    """Security review #2: a plain token must not satisfy assurance or originator constraints."""
+    assert_denied(
+        transfer_policy(agents=requirements), request(mint()), ReasonCode.AGENT_CONTEXT_MISSING
+    )
+
+
+def test_hop_limit_alone_accepts_tokens_without_agents(mint: Mint) -> None:
+    policy = transfer_policy(agents=AgentRequirements(enabled=True, maximum_hops=2))
+    assert policy.evaluate(request(mint())).allowed
+
+
+def test_missing_agent_context_denied_when_required(mint: Mint) -> None:
     required = AgentRequirements(enabled=True, require_agent_context=True)
     assert_denied(
         transfer_policy(agents=required), request(mint()), ReasonCode.AGENT_CONTEXT_MISSING

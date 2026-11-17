@@ -12,9 +12,11 @@ its issuance has been recorded. Nothing here logs or records a token; only diges
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
+import weakref
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -117,7 +119,7 @@ def claims_digest(claims: TransactionClaims) -> str:
 class TokenEndpoint:
     """Runs the issuance and replacement pipeline for one request."""
 
-    __slots__ = ("_audit", "_c", "_verifier")
+    __slots__ = ("_audit", "_c", "_replacement_locks", "_verifier")
 
     def __init__(self, components: TtsComponents) -> None:
         self._c = components
@@ -125,6 +127,19 @@ class TokenEndpoint:
         own_keys = StaticKeySet.from_jwks(components.signer.jwks())
         self._verifier = txn_token_verifier(components.settings, own_keys, components.clock)
         self._audit = AuditRecorder(components.log, components.sink)
+        # One lock per txn makes count -> plan -> sign -> record atomic within this process, so
+        # concurrent replacements cannot all pass the replacement limit (security review #5).
+        # Multi-instance deployments additionally need the shared IssuanceLog to enforce it.
+        self._replacement_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = (
+            weakref.WeakValueDictionary()
+        )
+
+    def _replacement_lock(self, txn: str) -> asyncio.Lock:
+        lock = self._replacement_locks.get(txn)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._replacement_locks[txn] = lock
+        return lock
 
     async def handle(
         self, raw_body: bytes, content_type: str | None, headers: Headers, peer: str | None
@@ -188,23 +203,24 @@ class TokenEndpoint:
     ) -> TokenResponse:
         current = verify_txn_token(self._verifier, request.subject_token)
         progress.txn = current.claims.txn
-        count = await self._c.log.replacement_count(current.claims.txn)
-        plan = plan_replacement(
-            current,
-            request,
-            workload,
-            self._c.issuance_policy,
-            self._c.settings,
-            self._c.clock,
-            count,
-            agents=self._c.agent_profile,
-        )
-        detail = {"replaced_token_digest": current.digest}
-        if plan.extends_lifetime:
-            detail["lifetime"] = "extended"
-        return await self._sign_and_record(
-            EventType.TOKEN_REPLACED, plan.claims, workload, plan.dropped_keys, detail
-        )
+        async with self._replacement_lock(current.claims.txn):
+            count = await self._c.log.replacement_count(current.claims.txn)
+            plan = plan_replacement(
+                current,
+                request,
+                workload,
+                self._c.issuance_policy,
+                self._c.settings,
+                self._c.clock,
+                count,
+                agents=self._c.agent_profile,
+            )
+            detail = {"replaced_token_digest": current.digest}
+            if plan.extends_lifetime:
+                detail["lifetime"] = "extended"
+            return await self._sign_and_record(
+                EventType.TOKEN_REPLACED, plan.claims, workload, plan.dropped_keys, detail
+            )
 
     async def _sign_and_record(
         self,

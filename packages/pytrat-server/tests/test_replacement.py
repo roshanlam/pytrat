@@ -173,3 +173,26 @@ async def test_chain_is_reconstructed_from_log_pytrat_p9(tts):
 
     workloads = [json.loads(r.record)["event"]["caller_workload"] for r in chain]
     assert workloads == ["api-gateway", "payment-service", "billing-agent"]
+
+
+async def test_concurrent_replacements_cannot_exceed_the_limit(extending, monkeypatch):
+    """Security review #5: five simultaneous replacements of one txn against a limit of two."""
+    import asyncio
+
+    tts = extending
+    token = await original(tts)
+    txn = tts.verifier().verify(token).claims.txn
+    count = type(tts.log).replacement_count
+
+    async def yielding_count(self, txn_id: str) -> int:
+        # A real (SQLite/PostgreSQL) log awaits I/O here, letting other requests interleave.
+        result = await count(self, txn_id)
+        await asyncio.sleep(0)
+        return result
+
+    monkeypatch.setattr(type(tts.log), "replacement_count", yielding_count)
+    tts.clock.advance(30)
+    responses = await asyncio.gather(*(tts.post(tts.replacement_form(token)) for _ in range(5)))
+    statuses = sorted(response.status_code for response in responses)
+    assert statuses == [200, 200, 400, 400, 400]
+    assert await tts.log.replacement_count(txn) == 2

@@ -11,6 +11,7 @@ from pytrat.core import (
     ReasonCode,
     WorkloadIdentity,
     WorkloadJwtAuthenticator,
+    WorkloadKeys,
 )
 from pytrat.core.clock import FrozenClock
 from pytrat.core.crypto import private_key_to_pem
@@ -57,9 +58,10 @@ def test_round_trip_with_resource_side_authenticator(key_file) -> None:
     with bind_transaction(factory.verifier().verify(factory.mint())):
         client.post("https://ledger.internal/entries")
     inbound = InboundRequest(tuple(seen[0].headers.multi_items()))
-    identity = WorkloadJwtAuthenticator(
-        key.key_set(), audience="ledger-service", clock=clock
-    ).authenticate(inbound)
+    keys = WorkloadKeys({"payment-service": key.key_set()})
+    identity = WorkloadJwtAuthenticator(keys, audience="ledger-service", clock=clock).authenticate(
+        inbound
+    )
     assert identity == WorkloadIdentity("payment-service", "workload-jwt")
     assert seen[0].headers["Workload-Identity"] != seen[0].headers["Txn-Token"]
 

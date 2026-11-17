@@ -23,6 +23,7 @@ from pytrat.core import (
     StaticKeySet,
     TokenError,
     WorkloadJwtAuthenticator,
+    WorkloadKeys,
     parse_claims,
 )
 from pytrat.core.testing import TokenFactory
@@ -118,6 +119,8 @@ def test_binding_raises_only_pytrat_errors(tctx: object, request_data: object) -
     st.text(max_size=20),
 )
 def test_workload_authenticator_raises_only_pytrat_errors(headers, peer: str) -> None:
-    authenticator = WorkloadJwtAuthenticator(FACTORY.key.key_set(), audience="svc")
+    authenticator = WorkloadJwtAuthenticator(
+        WorkloadKeys({"svc": FACTORY.key.key_set()}), audience="svc"
+    )
     with contextlib.suppress(PyTraTError):
         authenticator.authenticate(InboundRequest(tuple(headers), peer))

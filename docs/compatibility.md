@@ -51,6 +51,9 @@ The vendored text of both drafts is in [`docs/spec/`](spec/). Programmatic acces
 | P25 | Subject tokens (§11.2) | `self_signed` and `unsigned_json` are disabled by default. A subject without a known scope is rejected (§13.6, §13.14). Client-credentials subjects are detected by `gty=client-credentials` or `sub == client_id`. Subject and replacement-input expiry (§6, §13.15) are checked with zero leeway. |
 | P26 | Txn-Token lifetime vs subject lifetime (§6 leaves it to policy) | `exp` is capped at the subject token's `exp` by default. On replacement, `exp` is capped at the input token's `exp` unless `extend_lifetime` is enabled, in which case `max_replacements_per_txn` applies. |
 | P27 | `act` when the agent profile is disabled | Copied unchanged from the subject token (RFC 8693 semantics); `agentic_ctx` on an input token is carried forward unmodified. |
+| P28 | `act` in self-signed (§11.2.1) or unsigned (§11.2.2) subjects | Refused (`ISSUANCE_NOT_AUTHORIZED`): such subjects are written by the requesting workload, which must not be able to name an agent (and inherit its assurance). Delegation must come from an independent issuer's token. |
+| P29 | Workload JWT identity at resource services | The caller is the *owner* of the verifying key (`WorkloadKeys`); `sub` and `iss` (if present) must name that owner. A workload can never authenticate as another workload, even with a valid signature. |
+| P30 | Resource agent constraints on a token without `agentic_ctx` | `minimum_assurance`, `allowed_originators`, `require_verified_agent` and `require_agent_context` deny (`AGENT_CONTEXT_MISSING`); a `maximum_hops` limit alone accepts it (zero agent hops). |
 
 The full reconciliation of the agent draft, with section references and every ambiguity, is in
 [`docs/spec/agent-profile-03-notes.md`](spec/agent-profile-03-notes.md).

@@ -46,7 +46,9 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel, ConfigDict
 
-from pytrat.core import StaticKeySet, TokenVerifier, VerifierSettings, WorkloadJwtAuthenticator
+from pytrat.core import (
+    StaticKeySet, TokenVerifier, VerifierSettings, WorkloadJwtAuthenticator, WorkloadKeys,
+)
 from pytrat.fastapi import PyTraT, Transaction
 
 class Transfer(BaseModel):
@@ -64,7 +66,8 @@ pytrat = PyTraT(
     service="ledger-service",
     verifier=verifier,
     authenticator=WorkloadJwtAuthenticator(               # who is calling (independent of the token)
-        StaticKeySet.from_jwks_file("workloads.jwks.json"), audience="ledger-service"
+        WorkloadKeys({"payment-service": StaticKeySet.from_jwks_file("payment-service.jwks.json")}),
+        audience="ledger-service",                         # identity = owner of the verifying key
     ),
     protected_prefixes=("/internal",),                    # forgotten routes fail closed
 )

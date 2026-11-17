@@ -16,7 +16,7 @@ from typing import Final, Protocol, TypeGuard
 from pytrat.core.clock import Clock, SystemClock
 from pytrat.core.errors import AuthenticationError, ConfigurationError, ReasonCode, TokenError
 from pytrat.core.jws import verify_jws
-from pytrat.core.keys import KeyProvider
+from pytrat.core.keys import KeyProvider, StaticKeySet, VerificationKey
 
 # WIMSE workload identity tokens use typ "wit+jwt"; plain "JWT" is accepted for interoperability.
 WORKLOAD_JWT_TYPES: Final = frozenset({"wit+jwt", "jwt"})
@@ -83,11 +83,63 @@ class WorkloadAuthenticator(Protocol):
         ...
 
 
+class WorkloadKeys:
+    """Trusted workload keys, each owned by exactly one workload.
+
+    Ownership is what makes self-signed workload JWTs safe: a JWT verified with a key owned by
+    ``payment-service`` can only ever authenticate ``payment-service``, whatever its claims say.
+    Implements :class:`~pytrat.core.keys.KeyProvider`.
+    """
+
+    __slots__ = ("_keys", "_owners")
+
+    def __init__(self, workloads: Mapping[str, KeyProvider | Iterable[VerificationKey]]) -> None:
+        keys: dict[str, VerificationKey] = {}
+        owners: dict[str, str] = {}
+        for workload_id, key_source in workloads.items():
+            if not workload_id:
+                raise ConfigurationError("workload ids must be non-empty")
+            for key in _keys_of(key_source):
+                if key.kid in owners:
+                    # One kid, two owners would make the owner ambiguous.
+                    raise ConfigurationError(f"kid {key.kid!r} is registered to two workloads")
+                keys[key.kid] = key
+                owners[key.kid] = workload_id
+        if not keys:
+            raise ConfigurationError("at least one workload key is required")
+        self._keys: Mapping[str, VerificationKey] = keys
+        self._owners: Mapping[str, str] = owners
+
+    def get(self, kid: str | None) -> VerificationKey | None:
+        """Return the key for ``kid``; workload JWTs must always carry a ``kid``."""
+        return self._keys.get(kid) if kid is not None else None
+
+    def owner(self, kid: str) -> str:
+        """The workload that owns ``kid``."""
+        return self._owners[kid]
+
+    @property
+    def workloads(self) -> frozenset[str]:
+        """Registered workload ids."""
+        return frozenset(self._owners.values())
+
+
+def _keys_of(source: KeyProvider | Iterable[VerificationKey]) -> list[VerificationKey]:
+    if isinstance(source, StaticKeySet):
+        return [key for kid in sorted(source.kids) if (key := source.get(kid)) is not None]
+    if isinstance(source, Iterable):
+        keys = list(source)
+        if all(isinstance(key, VerificationKey) for key in keys):
+            return keys
+    raise ConfigurationError("workload keys must be a StaticKeySet or VerificationKeys")
+
+
 class WorkloadJwtAuthenticator:
     """Verifies a signed workload JWT carried in a dedicated header.
 
-    The JWT's ``sub`` is the workload id. It must be addressed to this service (``aud``), be
-    short-lived, and be signed by a key in the trusted workload key set.
+    The caller's identity is the *owner of the verifying key* (see :class:`WorkloadKeys`); the
+    JWT's ``sub`` (and ``iss``, if present) must name that same workload. The JWT must also be
+    addressed to this service (``aud``) and be short-lived.
     """
 
     __slots__ = (
@@ -102,7 +154,7 @@ class WorkloadJwtAuthenticator:
 
     def __init__(
         self,
-        keys: KeyProvider,
+        keys: WorkloadKeys,
         *,
         audience: str,
         algorithms: frozenset[str] = frozenset({"ES256", "EdDSA"}),
@@ -113,6 +165,8 @@ class WorkloadJwtAuthenticator:
     ) -> None:
         if not audience:
             raise ConfigurationError("workload JWT audience must be set")
+        if not isinstance(keys, WorkloadKeys):
+            raise ConfigurationError("workload keys must be a WorkloadKeys registry (key owners)")
         self._keys = keys
         self._audience = audience
         self._algorithms = algorithms
@@ -130,18 +184,25 @@ class WorkloadJwtAuthenticator:
         if raw is None:
             return None
         try:
-            payload = verify_jws(
+            verified = verify_jws(
                 raw, self._keys, algorithms=self._algorithms, allowed_typ=WORKLOAD_JWT_TYPES
-            ).payload
+            )
         except TokenError:
             raise _unauthenticated("workload credential failed verification") from None
-        return WorkloadIdentity(id=self._check_claims(payload), method="workload-jwt")
+        owner = self._keys.owner(verified.key.kid)
+        self._check_claims(verified.payload, owner)
+        return WorkloadIdentity(id=owner, method="workload-jwt")
 
-    def _check_claims(self, payload: Mapping[str, object]) -> str:
-        subject, audience = payload.get("sub"), payload.get("aud")
+    def _check_claims(self, payload: Mapping[str, object], owner: str) -> None:
+        subject, issuer, audience = (
+            payload.get("sub"),
+            payload.get("iss", owner),
+            payload.get("aud"),
+        )
         iat, exp = payload.get("iat"), payload.get("exp")
-        if not isinstance(subject, str) or not subject:
-            raise _unauthenticated("workload credential has no subject")
+        # A workload may only speak for itself: the claimed identity must be the key's owner.
+        if subject != owner or issuer != owner:
+            raise _unauthenticated("workload credential does not match its signing key's owner")
         audiences = [audience] if isinstance(audience, str) else audience
         if not isinstance(audiences, list) or self._audience not in audiences:
             raise _unauthenticated("workload credential is not addressed to this service")
@@ -152,7 +213,6 @@ class WorkloadJwtAuthenticator:
             raise _unauthenticated("workload credential lifetime is invalid")
         if iat > now + self._leeway or now >= exp + self._leeway:
             raise _unauthenticated("workload credential is not currently valid")
-        return subject
 
 
 class TrustedProxyHeaderAuthenticator:

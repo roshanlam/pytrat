@@ -318,8 +318,14 @@ class CompiledPolicy:
         if not agents.enabled:
             return
         if agentic_ctx is None:
-            # A route that requires a verified agent cannot be satisfied without an agent chain.
-            if agents.require_agent_context or agents.require_verified_agent:
+            # Any constraint *about* the agent chain is unsatisfiable without one; only a hop
+            # limit is met by a chain of zero agents. (Security review finding #2.)
+            if (
+                agents.require_agent_context
+                or agents.require_verified_agent
+                or agents.minimum_assurance is not None
+                or agents.allowed_originators is not None
+            ):
                 raise AuthorizationError(
                     ReasonCode.AGENT_CONTEXT_MISSING, "token carries no agentic_ctx"
                 )

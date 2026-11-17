@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
 from starlette.requests import Request
 
+from fastapi import params
 from fastapi.dependencies.utils import request_body_to_args, request_params_to_args
 from pytrat.core.errors import ConfigurationError
 from pytrat.fastapi.responses import MalformedRequestError
@@ -80,11 +81,18 @@ class RequestDataReader:
         """Build a reader from FastAPI's dependency tree for the route.
 
         Raises:
-            ConfigurationError: If two sources (path, query, body) provide the same name.
+            ConfigurationError: If two sources (path, query, body) provide the same name, or the
+                body is a form/file body (not bindable; security review finding #4).
         """
         path_fields = tuple(dependant.path_params)
         query_fields = tuple(dependant.query_params)
         body_fields = tuple(dependant.body_params)
+        if any(isinstance(field.field_info, params.Form) for field in body_fields):
+            # FastAPI consumes form bodies as a stream, so the exact values the handler receives
+            # cannot be re-read; refuse at startup rather than fail every request.
+            raise ConfigurationError(
+                f"{label}: form and file bodies cannot be bound to tctx; use a JSON body"
+            )
         sources: list[Sequence[str]] = [
             [field.name for field in path_fields],
             [field.name for field in query_fields],

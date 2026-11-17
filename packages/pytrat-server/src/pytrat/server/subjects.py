@@ -117,6 +117,20 @@ def _scope(payload: Mapping[str, object]) -> Scope | None:
         raise _invalid_grant("subject token scope is invalid") from None
 
 
+def _reject_requester_asserted_act(payload: Mapping[str, object]) -> None:
+    """Refuse ``act`` in a subject the requesting workload wrote itself.
+
+    PyTraT profile P28 (security review finding #3): self-signed and unsigned subjects are
+    asserted by the requester, so it could otherwise name any registered agent (and inherit its
+    assurance) as the delegated actor. Delegation must come from an independent issuer.
+    """
+    if "act" in payload:
+        raise _invalid_grant(
+            "a requester-asserted subject may not claim a delegated actor",
+            ReasonCode.ISSUANCE_NOT_AUTHORIZED,
+        )
+
+
 def _act(payload: Mapping[str, object]) -> JsonObject | None:
     act = payload.get("act")
     if act is None:
@@ -304,7 +318,8 @@ class SelfSignedValidator:
         _check_not_expired(expires_at, self._clock)
         sub = _string(payload, "sub", required=True)
         assert sub is not None  # noqa: S101 - required=True never returns None
-        return SubjectInfo(sub=sub, scope=_scope(payload), exp=expires_at, act=_act(payload))
+        _reject_requester_asserted_act(payload)
+        return SubjectInfo(sub=sub, scope=_scope(payload), exp=expires_at)
 
 
 class UnsignedJsonValidator:
@@ -342,4 +357,5 @@ class UnsignedJsonValidator:
         assert sub is not None  # noqa: S101 - required=True never returns None
         expires_at = _integer(payload, "exp")
         _check_not_expired(expires_at, self._clock)
-        return SubjectInfo(sub=sub, scope=_scope(payload), exp=expires_at, act=_act(payload))
+        _reject_requester_asserted_act(payload)
+        return SubjectInfo(sub=sub, scope=_scope(payload), exp=expires_at)
