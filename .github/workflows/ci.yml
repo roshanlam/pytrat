@@ -28,6 +28,15 @@ jobs:
       - run: uv run mypy
       - run: uv run lint-imports
       - run: uv run pytest --cov --cov-report=term-missing --cov-fail-under=90
+      - name: Type-check examples
+        run: |
+          (cd examples/payment-transfer && MYPYPATH=. uv run mypy --strict payment_demo demo.py serve.py)
+          (cd examples/agent-delegation && MYPYPATH=. uv run mypy --strict agent_delegation.py)
+      - name: Run demos
+        run: |
+          uv run python examples/payment-transfer/demo.py
+          uv run python examples/payment-transfer/serve.py
+          uv run python examples/agent-delegation/agent_delegation.py
 
   audit:
     runs-on: ubuntu-latest
