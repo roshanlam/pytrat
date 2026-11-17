@@ -1420,7 +1420,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "pytrat-core", editable = "packages/pytrat-core" },
-    { name = "redis", specifier = ">=5" },
+    { name = "redis", specifier = ">=6" },
 ]
 
 [[package]]

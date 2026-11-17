@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import threading
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 import pytest
@@ -27,6 +28,7 @@ class FakeRedisServer:
     clock: FrozenClock
     entries: dict[str, tuple[str, float]] = field(default_factory=dict)
     lock: threading.Lock = field(default_factory=threading.Lock)
+    config: dict[str, str] = field(default_factory=lambda: {"maxmemory-policy": "noeviction"})
 
     def set_nx_px(self, name: str, value: str, px: int) -> bool | None:
         if px <= 0:
@@ -48,6 +50,9 @@ class FakeRedisClient:
     calls: list[tuple[str, str, bool, int]] = field(default_factory=list)
     error: BaseException | None = None
     reply: object = "server"
+    config_calls: list[str] = field(default_factory=list)
+    config_error: BaseException | None = None
+    config_reply: object = "server"
 
     def set(self, name: str, value: str, *, nx: bool, px: int) -> object:
         self.calls.append((name, value, nx, px))
@@ -57,3 +62,11 @@ class FakeRedisClient:
             return self.reply
         assert nx is True
         return self.server.set_nx_px(name, value, px)
+
+    def config_get(self, pattern: str) -> Mapping[str, str] | object:
+        self.config_calls.append(pattern)
+        if self.config_error is not None:
+            raise self.config_error
+        if self.config_reply != "server":
+            return self.config_reply
+        return {name: value for name, value in self.server.config.items() if name == pattern}

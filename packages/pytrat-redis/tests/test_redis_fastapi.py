@@ -21,7 +21,7 @@ pytestmark = pytest.mark.integration
 
 
 def instance(factory: TokenFactory, server: FakeRedisServer) -> tuple[FastAPI, PyTraT]:
-    store = RedisReplayStore(FakeRedisClient(server), clock=factory.clock)
+    store = RedisReplayStore(FakeRedisClient(server), namespace="ledger", clock=factory.clock)
     pytrat = PyTraT(service="ledger", verifier=factory.verifier(), replay_store=store)
     app = FastAPI(lifespan=pytrat.lifespan)
     pytrat.install(app)

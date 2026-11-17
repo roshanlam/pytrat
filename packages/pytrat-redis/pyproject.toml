@@ -5,7 +5,7 @@ description = "Redis-backed replay store for multi-instance PyTraT deployments."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12"
-dependencies = ["pytrat-core", "redis>=5"]
+dependencies = ["pytrat-core", "redis>=6"]
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Security",

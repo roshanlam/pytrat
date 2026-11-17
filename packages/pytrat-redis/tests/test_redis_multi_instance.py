@@ -46,7 +46,9 @@ def prefix() -> Iterator[str]:
 def instances(prefix: str, count: int, **options: object) -> list[RedisReplayStore]:
     url = real_redis_url()
     return [
-        RedisReplayStore.from_url(url, prefix=prefix, **options)  # type: ignore[arg-type]
+        RedisReplayStore.from_url(  # type: ignore[arg-type]
+            url, prefix=prefix, namespace="ledger-service", **options
+        )
         for _ in range(count)
     ]
 
@@ -131,7 +133,7 @@ def _closed_port() -> int:
 
 def test_redis_down_denies_with_dependency_error(caplog: pytest.LogCaptureFixture) -> None:
     url = f"redis://:hunter2@127.0.0.1:{_closed_port()}/0"
-    store = RedisReplayStore.from_url(url, socket_timeout=0.2)
+    store = RedisReplayStore.from_url(url, namespace="ledger-service", socket_timeout=0.2)
     started = time.monotonic()
     with pytest.raises(DependencyError) as caught:
         store.record_once(replay_key("txn-down", "op"), time.time() + 60)
