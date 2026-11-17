@@ -1,0 +1,15 @@
+agents:
+  - id: billing-agent
+    name: Billing agent
+    owner: payments-team
+    assurance_level: high
+    version: 2.4.1
+    provenance: sha256:0000
+    client_id: 5
+    attributes: {tee: sgx}
+  - id: planner
+    name: Planner
+    owner: ai-team
+    assurance_level: low
+    version: "1"
+    provenance: build-1

@@ -20,3 +20,7 @@ site/
 examples/**/keys/
 .env
 .DS_Store
+.fuzz-work/
+crash-*
+leak-*
+timeout-*

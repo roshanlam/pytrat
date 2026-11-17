@@ -16,6 +16,9 @@ dev = [
     "types-PyYAML>=6.0",
     "pre-commit>=4.0",
 ]
+# Coverage-guided fuzzing (fuzz/README.md). Atheris publishes Linux x86-64 wheels only; elsewhere
+# run the harnesses through fuzz/Dockerfile.
+fuzz = ["atheris>=3.1; sys_platform == 'linux' and platform_machine == 'x86_64'"]
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]
@@ -40,13 +43,17 @@ ignore = [
     "S105",    # flags every identifier containing "token"; noise in a token library
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["fuzz"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR2004", "FBT", "PLC0415", "N802", "SLF001", "ARG", "BLE001", "TRY"]
 "tests/**" = ["S101", "S105", "S106", "D", "ANN", "PLR2004", "FBT", "PLC0415", "N802", "SLF001", "ARG", "BLE001", "TRY"]
-"benchmarks/**" = ["S101", "D", "ANN", "INP001"]
+"fuzz/**" = ["S106"]  # seed inputs name OAuth parameters such as client_secret
+"benchmarks/**" =["S101", "D", "ANN", "INP001"]
 "examples/**" = ["D", "S104", "INP001", "T201"]
 "docs/**" = ["D", "INP001"]
 
@@ -68,11 +75,11 @@ mypy_path = [
     "packages/pytrat-cli/src",
     "packages/pytrat-django/src",
 ]
-files = ["packages/*/src"]
+files = ["packages/*/src", "fuzz"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["django.*"]
+module = ["django.*", "atheris"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]
@@ -84,6 +91,8 @@ warn_required_dynamic_aliases = true
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config", "-ra"]
 testpaths = ["packages", "tests"]
+# The repository root, so tests can import the fuzz harnesses (package ``fuzz``).
+pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
