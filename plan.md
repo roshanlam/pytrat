@@ -722,3 +722,24 @@ choices are also listed in `docs/compatibility.md`.
 - Settings: `PYTRAT = {"ENFORCER", "POLICY", "PROTECTED_PREFIXES", "DEBUG_ERRORS", "REPLAY_STORE",
   "AGENT_DIRECTORY"}`, validated in `AppConfig.ready()`. A comma in `Txn-Token` (WSGI-joined
   duplicates) is rejected as two tokens.
+
+**Security review (post-M8).** An independent adversarial review found five issues; all are fixed
+with regression tests that fail without the fix: workload impersonation via self-asserted `sub`
+(now bound to key ownership, `WorkloadKeys`), agent constraints bypassed by omitting
+`agentic_ctx`, agent forgery via `act` in requester-asserted subjects, a replacement-limit race,
+and a 500 on bound form bodies. See `docs/compatibility.md` P28–P30.
+
+## 11. Milestone status
+
+| Milestone | Status |
+|---|---|
+| M0 Scaffolding | Done |
+| M1 core | Done (99% branch coverage, conformance vectors, attack suite) |
+| M2 policy | Done |
+| M3 client | Done |
+| M4 server | Done (full feature set, including rotation, rate limiting, mTLS-proxy auth, self-signed subjects) |
+| M5 FastAPI | Done |
+| M6 demo / v0.1 | Done: `examples/payment-transfer` (in-process and real sockets), run in CI |
+| M7 agents | Done: `examples/agent-delegation`, property tests for monotonic attenuation |
+| M8 DX | Done except the mkdocs site; CLI, Django + example, docs in `docs/` |
+| M9 hardening | Partial: property-based fuzzing of all untrusted-input parsers and an independent review are done. **Not done:** Atheris coverage-guided fuzzing, Redis replay-store adapter, OpenTelemetry exporter, Tokenetes interoperability tests, external third-party security audit, published benchmark report beyond `benchmarks/`. |
