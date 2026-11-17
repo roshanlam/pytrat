@@ -145,6 +145,24 @@ async def test_recorder_fans_out_and_survives_log_failure_on_denial(caplog):
         await recorder.record_success(event(), "d")
 
 
+async def test_recorder_survives_a_raising_sink_on_denial(caplog):
+    """Regression (found by tests/integration/test_failure_injection.py): a sink that raised
+    from ``emit`` escaped ``record_denial`` ("never raises") and replaced the denial with a 500.
+    """
+
+    class RaisingSink:
+        def emit(self, event):
+            raise OSError("audit volume is full")
+
+    log = InMemoryIssuanceLog()
+    recorder = AuditRecorder(log, RaisingSink())
+    await recorder.record_denial(event(EventType.ISSUANCE_DENIED))
+    assert [record.event_type for record in log.records] == [EventType.ISSUANCE_DENIED.value]
+    assert "audit sink could not record a denial: OSError" in caplog.text
+    with pytest.raises(OSError, match="full"):
+        await recorder.record_success(event(), "d")  # success still fails closed
+
+
 def test_token_bucket():
     clock = FrozenClock(0.0)
     limiter = TokenBucketRateLimiter(rate=1.0, burst=2, clock=clock, max_keys=2)

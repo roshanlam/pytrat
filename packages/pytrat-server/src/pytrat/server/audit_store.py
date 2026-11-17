@@ -329,4 +329,7 @@ class AuditRecorder:
             _logger.error(  # noqa: TRY400 - a traceback adds nothing; reason code only
                 "issuance log could not record a denial: %s", exc.reason.value
             )
-        self._sink.emit(event)
+        try:
+            self._sink.emit(event)
+        except Exception as exc:  # noqa: BLE001 - a sink breaking its no-raise contract must not replace the denial being reported
+            _logger.error("audit sink could not record a denial: %s", type(exc).__name__)  # noqa: TRY400 - the exception text may echo event data
