@@ -314,12 +314,22 @@ class AuditRecorder:
     async def record_success(self, event: AuditEvent, claims_digest: str) -> None:
         """Record an issuance or replacement. The token must not be returned unless this succeeds.
 
+        The issuance log is authoritative (PyTraT profile P9). Once it has recorded the event,
+        a failing secondary sink is logged and ignored: withholding the token then would leave
+        a logged issuance that never happened, and would consume the replacement budget.
+
         Raises:
             DependencyError: If the issuance log cannot record the event (fail closed: the
                 call chain would otherwise be lost, PyTraT profile P9).
         """
         await self._log.append(event, claims_digest)
-        self._sink.emit(event)
+        self._emit(event)
+
+    def _emit(self, event: AuditEvent) -> None:
+        try:
+            self._sink.emit(event)
+        except Exception as exc:  # noqa: BLE001 - the authoritative log already holds the event; a sink breaking its no-raise contract must not change the outcome
+            _logger.error("audit sink could not record an event: %s", type(exc).__name__)  # noqa: TRY400 - the exception text may echo event data
 
     async def record_denial(self, event: AuditEvent) -> None:
         """Record a denial. Never raises: the request is already being refused."""
@@ -329,7 +339,4 @@ class AuditRecorder:
             _logger.error(  # noqa: TRY400 - a traceback adds nothing; reason code only
                 "issuance log could not record a denial: %s", exc.reason.value
             )
-        try:
-            self._sink.emit(event)
-        except Exception as exc:  # noqa: BLE001 - a sink breaking its no-raise contract must not replace the denial being reported
-            _logger.error("audit sink could not record a denial: %s", type(exc).__name__)  # noqa: TRY400 - the exception text may echo event data
+        self._emit(event)

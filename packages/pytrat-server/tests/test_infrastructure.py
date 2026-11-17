@@ -158,9 +158,13 @@ async def test_recorder_survives_a_raising_sink_on_denial(caplog):
     recorder = AuditRecorder(log, RaisingSink())
     await recorder.record_denial(event(EventType.ISSUANCE_DENIED))
     assert [record.event_type for record in log.records] == [EventType.ISSUANCE_DENIED.value]
-    assert "audit sink could not record a denial: OSError" in caplog.text
-    with pytest.raises(OSError, match="full"):
-        await recorder.record_success(event(), "d")  # success still fails closed
+    assert "audit sink could not record an event: OSError" in caplog.text
+    # The authoritative log holds the success, so the broken secondary sink changes nothing.
+    await recorder.record_success(event(), "d")
+    assert [record.event_type for record in log.records] == [
+        EventType.ISSUANCE_DENIED.value,
+        EventType.TOKEN_ISSUED.value,
+    ]
 
 
 def test_token_bucket():

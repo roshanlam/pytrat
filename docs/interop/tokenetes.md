@@ -198,6 +198,13 @@ The gateway's X.509-SVID for the host client is written to `tests/interoperabili
 which git ignores. Without `PYTRAT_TOKENETES_URL` the live tests are skipped; the fixture tests
 always run.
 
+!!! warning "Test-only stack"
+    The live stack is for interoperability tests only. The mock tconfigd's `PUT /extra-jwks`
+    endpoint is unauthenticated, so any local process can inject verifier keys. Its ports are
+    bound to `127.0.0.1`. `entrypoint.sh` writes the gateway SVID private key world-readable
+    (0644) into the git-ignored `.run/` directory. Never expose this stack beyond loopback or
+    reuse its configuration.
+
 ## Sources
 
 * tokenetes: <https://github.com/tokenetes/tokenetes> @ `f9b7acf60f2df60acbe9749e570a502aa0193fb6`

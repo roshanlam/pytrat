@@ -32,6 +32,7 @@ from pytrat.core import (
     AuditEvent,
     DependencyError,
     EventType,
+    InMemoryReplayStore,
     MemorySink,
     ReasonCode,
     SecretToken,
@@ -629,14 +630,17 @@ async def test_tts_sink_failure_on_denial_keeps_the_original_denial(world: World
     assert [record.event_type for record in log.records] == [EventType.ISSUANCE_DENIED.value]
 
 
-async def test_tts_sink_failure_on_success_releases_no_token(world: World) -> None:
+async def test_tts_sink_failure_after_durable_log_keeps_the_log_truthful(world: World) -> None:
+    """The issuance log is authoritative (P9): once it has recorded the token, a broken
+    secondary sink neither withholds the token nor leaves a phantom success followed by a
+    denial (which would also consume the replacement budget)."""
     client, _ = world.client()
     world.sink.broken = True
-    with pytest.raises(ExchangeError) as excinfo:
-        await world.issue(client)
-    assert (excinfo.value.status_code, excinfo.value.oauth_error) == (500, "server_error")
-    world.sink.broken = False
-    assert (await world.issue(client)).claims.aud == TRUST_DOMAIN
+    token = await world.issue(client)
+    assert token.claims.aud == TRUST_DOMAIN
+    log = world.components.log
+    assert isinstance(log, InMemoryIssuanceLog)
+    assert [record.event_type for record in log.records] == [EventType.TOKEN_ISSUED.value]
 
 
 @pytest.fixture
@@ -696,6 +700,24 @@ async def test_resource_sink_failure_never_turns_into_an_allow(
     response = await call(app, pytrat, resource_kit.mint(**claims))
     assert response.status_code == status
     assert reason_of(response) == reason
+    assert calls == []
+
+
+async def test_resource_sink_failure_on_a_single_use_grant_consumes_the_use(
+    resource_kit: TokenFactory,
+) -> None:
+    """P35, documented trade-off: the use is recorded before the grant is audited, so a grant
+    refused because the sink is down is not retryable with the same token (fail closed)."""
+    sink = FlakySink()
+    sink.broken = True
+    store = InMemoryReplayStore(clock=resource_kit.clock)
+    app, pytrat, calls = resource_app(resource_kit, sink, replay_store=store)
+    token = resource_kit.mint()
+    first = await call(app, pytrat, token)
+    assert (first.status_code, reason_of(first)) == (503, ReasonCode.DEPENDENCY_UNAVAILABLE)
+    sink.broken = False
+    retry = await call(app, pytrat, token)
+    assert (retry.status_code, reason_of(retry)) == (403, ReasonCode.REPLAY_DETECTED)
     assert calls == []
 
 

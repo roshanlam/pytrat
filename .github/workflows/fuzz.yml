@@ -26,9 +26,16 @@ jobs:
           python-version: "3.13"
       - run: uv sync --frozen --all-packages --group fuzz
       - name: Fuzz
+        # Inputs reach the shell only through the environment, never interpolated into the script.
         env:
           FUZZ_WORK_DIR: ${{ runner.temp }}/fuzz
-        run: uv run fuzz/run.sh "${{ inputs.seconds || '300' }}" ${{ inputs.targets }}
+          FUZZ_SECONDS: ${{ inputs.seconds || '300' }}
+          FUZZ_TARGETS: ${{ inputs.targets }}
+        run: |
+          [[ "$FUZZ_SECONDS" =~ ^[0-9]+$ ]] || { echo "seconds must be an integer"; exit 1; }
+          [[ "$FUZZ_TARGETS" =~ ^[a-z_\ ]*$ ]] || { echo "invalid target list"; exit 1; }
+          # shellcheck disable=SC2086 # word splitting of the validated target list is intended
+          uv run fuzz/run.sh "$FUZZ_SECONDS" $FUZZ_TARGETS
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
