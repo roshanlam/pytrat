@@ -8,13 +8,15 @@ import httpx
 from typer.testing import CliRunner
 
 from pytrat.cli import app as cli
+from pytrat.core.testing.pytest_plugin import TransactionTestKit
 
 runner = CliRunner()
 
 
-async def test_getting_started_try_it_test_passes(snippet, tmp_path: Path) -> None:
+async def test_getting_started_try_it_test_passes(snippet) -> None:
     module = snippet("try_first_route")
-    await module.test_ledger_records_only_the_authorized_transfer(tmp_path)
+    kit = TransactionTestKit(trust_domain=module.TRUST_DOMAIN)
+    await module.test_ledger_records_only_the_authorized_transfer(kit)
 
 
 async def test_getting_started_production_app_uses_cli_generated_keys(

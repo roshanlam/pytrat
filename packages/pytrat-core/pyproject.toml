@@ -36,3 +36,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pytrat"]
+
+# Test fixtures (pytrat_kit); pytest loads this only when it runs. See pytrat.core.testing.
+[project.entry-points.pytest11]
+pytrat = "pytrat.core.testing.pytest_plugin"

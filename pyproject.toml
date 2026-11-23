@@ -102,7 +102,9 @@ warn_required_dynamic_aliases = true
 
 # ---------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
-addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config", "-ra"]
+# `-p no:pytrat`: the conftest loads the pytrat_kit plugin instead of its entry point, after
+# coverage has started, so the modules it imports are measured.
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config", "-ra", "-p", "no:pytrat"]
 testpaths = ["packages", "tests"]
 # The repository root, so tests can import the fuzz harnesses (package ``fuzz``).
 pythonpath = ["."]
