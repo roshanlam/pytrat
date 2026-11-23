@@ -3,10 +3,12 @@
 The `pytrat` developer command for PyTraT (OAuth Transaction Tokens).
 
 ```bash
-pip install pytrat-cli
+pip install pytrat-cli          # or: pip install "pytrat[cli]"
 ```
 
 ```bash
+pytrat demo                                               # watch a $100 -> $9,000 attack fail
+pytrat init my-service                                    # runnable starter: keys, TTS, service, tests
 pytrat version                                            # implemented draft revisions
 pytrat keys generate --kid tts-2026-11 --out keys/        # 0600 PEM + public JWKS
 pytrat keys jwks tts-2026-11=ES256=keys/tts-2026-11.pem   # combine keys for rotation
@@ -21,6 +23,6 @@ read from standard input (never from arguments), and inspection never prints the
 
 ## Documentation
 
-PyTraT documentation: *CLI* (every command and option; sources in `docs/` of the repository).
+Every command and option: <https://pytrat.readthedocs.io/en/latest/guides/cli/>.
 
 Apache-2.0.

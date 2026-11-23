@@ -6,43 +6,55 @@ Transaction Token authorized, with a test that proves it.
 ## Requirements
 
 * Python 3.12 or later.
-* The packages are published separately; install only what a service needs.
-
-=== "uv"
-
-    ```bash
-    uv add pytrat-fastapi          # resource services (pulls in core, policy and client)
-    uv add pytrat-cli              # developer tooling: keys, policy check, token inspect, TTS
-    ```
+* Install the `pytrat` package with the extras a service needs. Each extra is a separate
+  distribution (`pytrat-fastapi`, `pytrat-django`, …), which you can also install directly.
 
 === "pip"
 
     ```bash
-    pip install pytrat-fastapi
-    pip install pytrat-cli
+    pip install "pytrat[fastapi,cli]"   # a FastAPI resource service, plus developer tooling
+    ```
+
+=== "uv"
+
+    ```bash
+    uv add "pytrat[fastapi,cli]"
     ```
 
 | You are building | Install |
 |---|---|
-| A FastAPI service that receives Txn-Tokens | `pytrat-fastapi` |
-| A Django service that receives Txn-Tokens | `pytrat-django` |
-| A service or job that only obtains or forwards tokens | `pytrat-client` |
-| The Transaction Token Service | `pytrat-server` (reference implementation) |
-| Verification only, in another framework | `pytrat-core` (+ `pytrat-policy` for the pipeline) |
+| A FastAPI service that receives Txn-Tokens | `pytrat[fastapi]` |
+| A Django service that receives Txn-Tokens | `pytrat[django]` |
+| A service or job that only obtains or forwards tokens | `pytrat[client]` |
+| The Transaction Token Service | `pytrat[server]` (reference implementation) |
+| Verification only, in another framework | `pytrat` (+ `pytrat[policy]` for the pipeline) |
+| Keys, policy checks, token inspection, the demo | `pytrat[cli]` |
 
 ## The 30-second demo
 
-From a clone of the repository:
-
 ```bash
-uv sync --all-packages
-uv run python examples/payment-transfer/demo.py
+pytrat demo
 ```
 
 The demo runs an API gateway, a payment service, a ledger and the reference TTS in-process. A user
 transfers $100; then a compromised payment service rewrites the amount to $9,000 and the ledger
-refuses with `403 TRANSACTION_CONTEXT_MISMATCH`, recording one audit event. Run
-`examples/payment-transfer/serve.py` to see the same services on real sockets.
+refuses with `403 TRANSACTION_CONTEXT_MISMATCH`, recording one audit event. From a clone of the
+repository, `uv run python examples/payment-transfer/serve.py` runs the same services on real
+sockets.
+
+## Start from a working project
+
+`pytrat init` writes a small project that already works: development keys, a TTS configuration, a
+protected FastAPI service, its tests, and a gateway script that calls it.
+
+```bash
+pip install "pytrat[fastapi,server,cli]" pytest
+pytrat init my-service --trust-domain example.internal
+cd my-service && pytest
+```
+
+Its `README.md` shows how to run the TTS, the service and the gateway as three processes. The rest
+of this page builds the same kind of service step by step.
 
 ## Protect your first route
 
@@ -91,9 +103,10 @@ Run it with any ASGI server, for example
 
 ### 3. Test it
 
-In tests, `pytrat.core.testing.TokenFactory` stands in for the TTS: it generates its own key and
-mints valid (or deliberately broken) tokens. It is test-only and is never imported by production
-code.
+Installing `pytrat` also installs a pytest plugin. Its `pytrat_kit` fixture stands in for the TTS
+and for the calling workloads: it generates keys in memory and builds request headers carrying a
+Transaction Token and a workload credential. Override `pytrat_trust_domain` to match your service.
+See [Testing](guides/testing.md) for everything the fixture can do.
 
 ```python title="tests/test_ledger.py"
 --8<-- "docs/snippets/try_first_route.py"

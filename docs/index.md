@@ -22,19 +22,20 @@ transaction context that survives every hop.
 ## The 30-second demo
 
 ```bash
-uv sync --all-packages
-uv run python examples/payment-transfer/demo.py
+pip install "pytrat[all]"
+pytrat demo
 ```
 
 ```text
-── Transfer $100.00 from account-A to account-B (honest services)
-✔ 201 recorded: 100.00 USD (txn 01a1e862-…)
+1. Every service is honest
+   ledger: 201 recorded 100.00 USD
 
-── Transfer $100.00 from account-A to account-B (compromised payment service)
-✘ 403 TRANSACTION_CONTEXT_MISMATCH: Transaction not authorized
-ledger entries recorded: 0
-{ "event_type": "authorization.denied", "reason_code": "TRANSACTION_CONTEXT_MISMATCH",
-  "detail": {"check": "'amount_minor': request value differs from the authorized value"}, … }
+2. payment-service is compromised and rewrites $100.00 to $9,000.00
+   ledger: 403 refused (TRANSACTION_CONTEXT_MISMATCH)
+   ledger entries recorded: 0
+   ledger audit event:
+   { "event_type": "authorization.denied", "reason_code": "TRANSACTION_CONTEXT_MISMATCH",
+     "detail": {"check": "'amount_minor': request value differs from the authorized value"}, … }
 ```
 
 A compromised intermediary can change the request it forwards, but it holds no signing key, so it
