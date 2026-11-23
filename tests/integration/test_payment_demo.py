@@ -17,7 +17,7 @@ from pytrat.core import EventType, ReasonCode
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "examples" / "payment-transfer"))
 
-from payment_demo.scenario import TRANSFER, Deployment, deploy
+from pytrat.cli._demo.scenario import TRANSFER, Deployment, deploy
 
 pytestmark = pytest.mark.integration
 

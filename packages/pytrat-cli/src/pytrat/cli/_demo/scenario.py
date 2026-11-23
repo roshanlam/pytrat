@@ -11,8 +11,8 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI
 
-from payment_demo.lab import Lab, Urls
-from payment_demo.services import create_gateway, create_ledger, create_payment, create_tts
+from pytrat.cli._demo.lab import Lab, Urls
+from pytrat.cli._demo.services import create_gateway, create_ledger, create_payment, create_tts
 from pytrat.core import MemorySink
 
 TRANSFER = {

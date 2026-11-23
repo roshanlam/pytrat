@@ -22,7 +22,8 @@ Txn-Token is never an authentication credential.
 ## Run it
 
 ```bash
-uv run python examples/payment-transfer/demo.py    # in-process over ASGI, narrated
+pytrat demo                                        # after pip install "pytrat[all]"; no clone needed
+uv run python examples/payment-transfer/demo.py    # the same, from a clone
 uv run python examples/payment-transfer/serve.py   # same services on real TCP sockets (127.0.0.1)
 uv run python examples/payment-transfer/serve.py --keep-running   # leave the stack up
 ```
@@ -54,8 +55,8 @@ as `PYTRAT_TEST_COMPOSE=1 uv run pytest tests/integration/test_payment_compose.p
 
 How it is wired:
 
-* **One image** (`compose/Dockerfile`): a uv build stage installs only `pytrat-server` and
-  `pytrat-fastapi` from the lockfile (`uv sync --frozen --no-dev --no-editable`); the runtime stage
+* **One image** (`compose/Dockerfile`): a uv build stage installs only `pytrat-server`,
+  `pytrat-fastapi` and `pytrat-cli` (which holds the shared demo services) from the lockfile (`uv sync --frozen --no-dev --no-editable`); the runtime stage
   is `python:3.12-slim` with that virtualenv and `payment_demo/`, running as uid 10001.
   Containers run with a read-only root filesystem, a small `/tmp` tmpfs, all capabilities dropped
   and `no-new-privileges`. `compose/Dockerfile.dockerignore` limits the repository-root build
@@ -88,10 +89,17 @@ How it is wired:
 
 ## Files
 
-* `payment_demo/lab.py`: key generation and the TTS configuration (issuance policy allowlists
-  exactly the four transfer fields into `tctx`).
-* `payment_demo/services.py`: the four FastAPI apps.
-* `payment_demo/scenario.py`: in-process deployment with a host-routing ASGI transport.
+The scenario ships inside `pytrat-cli` so that `pytrat demo` works from PyPI. Its modules live in
+[`packages/pytrat-cli/src/pytrat/cli/_demo/`](../../packages/pytrat-cli/src/pytrat/cli/_demo):
+
+* `lab.py`: key generation and the TTS configuration (issuance policy allowlists exactly the four
+  transfer fields into `tctx`).
+* `services.py`: the four FastAPI apps. Read this one to see the integration code.
+* `scenario.py`: in-process deployment with a host-routing ASGI transport.
+* `narrative.py`: what `pytrat demo` prints.
+
+In this directory:
+
 * `payment_demo/pki.py`, `payment_demo/container.py`: key/certificate generation and the
   environment-driven entrypoint for the Compose deployment.
 * `compose/`: `Dockerfile`, `Dockerfile.dockerignore`, `compose.yaml` and `smoke.py`.

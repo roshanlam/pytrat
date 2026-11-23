@@ -34,6 +34,7 @@ jobs:
           (cd examples/agent-delegation && MYPYPATH=. uv run mypy --strict agent_delegation.py)
       - name: Run demos
         run: |
+          uv run pytrat demo
           uv run python examples/payment-transfer/demo.py
           uv run python examples/payment-transfer/serve.py
           uv run python examples/agent-delegation/agent_delegation.py

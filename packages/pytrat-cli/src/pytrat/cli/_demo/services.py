@@ -27,7 +27,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from payment_demo.lab import ALG, SCOPE, TRANSFER_FIELDS, TRUST_DOMAIN, TTS_ISSUER, Lab
+from pytrat.cli._demo.lab import ALG, SCOPE, TRANSFER_FIELDS, TRUST_DOMAIN, TTS_ISSUER, Lab
 from pytrat.client import (
     AsyncTransactionClient,
     AsyncTransactionTokenClient,
