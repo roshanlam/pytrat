@@ -12,6 +12,10 @@ from collections.abc import Iterator
 
 import pytest
 
+# Loaded here rather than through its entry point (disabled in pyproject.toml) so coverage measures
+# it and everything it imports.
+pytest_plugins = ["pytrat.core.testing.pytest_plugin"]
+
 # Three base64url segments where the first two look like JSON objects ("eyJ" = '{"').
 COMPACT_JWS = re.compile(r"eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{16,}")
 

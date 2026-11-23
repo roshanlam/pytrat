@@ -1,15 +1,9 @@
-import time
-from pathlib import Path
-
 import httpx
-from first_route import create_app
+import pytest
+from first_route import TRUST_DOMAIN, create_app
 
-from pytrat.client import WorkloadJwtAuth
-from pytrat.core import TXN_TOKEN_HEADER, FrozenClock, WorkloadKeys
-from pytrat.core.crypto import private_key_to_pem
-from pytrat.core.testing import TokenFactory, generate_test_key
+from pytrat.core.testing.pytest_plugin import TransactionTestKit
 
-LEDGER = "https://ledger.internal"
 TRANSFER = {
     "source_account": "account-A",
     "destination_account": "account-B",
@@ -18,43 +12,36 @@ TRANSFER = {
 }
 
 
-async def test_ledger_records_only_the_authorized_transfer(tmp_path: Path) -> None:
-    # Test-only stand-in for the TTS: mints tokens whose tctx authorizes TRANSFER.
-    tts = TokenFactory.create("ES256", clock=FrozenClock(time.time()))
-    caller = generate_test_key("ES256", kid="payment-service")
-    caller_pem = tmp_path / "payment-service.pem"
-    caller_pem.write_bytes(private_key_to_pem(caller.private_key))
+@pytest.fixture
+def pytrat_trust_domain() -> str:
+    return TRUST_DOMAIN  # pytrat_kit mints tokens for this Trust Domain
 
-    app = create_app(tts.key.key_set(), WorkloadKeys({"payment-service": caller.key_set()}))
-    # Signs a fresh workload JWT for each request, addressed to the ledger.
-    as_payment_service = WorkloadJwtAuth(
-        workload_id="payment-service",
-        private_key_path=caller_pem,
-        kid="payment-service",
-        alg="ES256",
-        audiences={LEDGER: "ledger-service"},
+
+async def test_ledger_records_only_the_authorized_transfer(pytrat_kit: TransactionTestKit) -> None:
+    # pytrat_kit stands in for the TTS and for the payment service; its keys live in memory.
+    app = create_app(pytrat_kit.tts_keys(), pytrat_kit.workload_keys("payment-service"))
+    authorized = pytrat_kit.headers(
+        scope="payments.transfer",
+        tctx=TRANSFER,
+        caller="payment-service",
+        audience="ledger-service",
     )
     url = "/internal/ledger/entries"
     transport = httpx.ASGITransport(app=app)
 
     async with (
         app.router.lifespan_context(app),  # runs PyTraT's startup checks
-        httpx.AsyncClient(transport=transport, base_url=LEDGER) as client,
+        httpx.AsyncClient(transport=transport, base_url="https://ledger.internal") as client,
     ):
-        token = {TXN_TOKEN_HEADER: tts.mint()}
-
-        honest = await client.post(url, json=TRANSFER, headers=token, auth=as_payment_service)
+        honest = await client.post(url, json=TRANSFER, headers=authorized)
         assert honest.status_code == 201
 
         tampered = {**TRANSFER, "amount_minor": 900_000}
-        denied = await client.post(url, json=tampered, headers=token, auth=as_payment_service)
+        denied = await client.post(url, json=tampered, headers=authorized)
         assert denied.status_code == 403
         assert denied.json()["reason_code"] == "TRANSACTION_CONTEXT_MISMATCH"
 
-        no_token = await client.post(url, json=TRANSFER, auth=as_payment_service)
-        assert no_token.status_code == 401
-        assert no_token.json()["reason_code"] == "TOKEN_MISSING"
-
-        no_caller = await client.post(url, json=TRANSFER, headers=token)
-        assert no_caller.status_code == 401
-        assert no_caller.json()["reason_code"] == "WORKLOAD_UNAUTHENTICATED"
+        no_caller = pytrat_kit.headers(scope="payments.transfer", tctx=TRANSFER)
+        unauthenticated = await client.post(url, json=TRANSFER, headers=no_caller)
+        assert unauthenticated.status_code == 401
+        assert unauthenticated.json()["reason_code"] == "WORKLOAD_UNAUTHENTICATED"

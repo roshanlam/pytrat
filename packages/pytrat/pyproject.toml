@@ -47,7 +47,7 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/roshanlam/pytrat"
-Documentation = "https://github.com/roshanlam/pytrat/tree/main/docs"
+Documentation = "https://pytrat.readthedocs.io/"
 Source = "https://github.com/roshanlam/pytrat"
 Issues = "https://github.com/roshanlam/pytrat/issues"
 Changelog = "https://github.com/roshanlam/pytrat/blob/main/CHANGELOG.md"

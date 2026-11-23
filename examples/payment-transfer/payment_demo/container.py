@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
-from payment_demo.lab import Lab, Urls
+from pytrat.cli._demo.lab import Lab, Urls
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -100,7 +100,7 @@ def _audit_to_stdout() -> None:
 
 def tts_app() -> FastAPI:
     """The reference TTS, configured from the environment."""
-    from payment_demo.services import create_tts  # noqa: PLC0415 - keep healthchecks light
+    from pytrat.cli._demo.services import create_tts  # noqa: PLC0415 - keep healthchecks light
     from pytrat.core import LoggingSink  # noqa: PLC0415
 
     _audit_to_stdout()
@@ -109,7 +109,7 @@ def tts_app() -> FastAPI:
 
 def gateway_app() -> FastAPI:
     """The API gateway, configured from the environment."""
-    from payment_demo.services import create_gateway  # noqa: PLC0415
+    from pytrat.cli._demo.services import create_gateway  # noqa: PLC0415
 
     _audit_to_stdout()
     return create_gateway(lab_from_env())
@@ -117,7 +117,7 @@ def gateway_app() -> FastAPI:
 
 def payment_app() -> FastAPI:
     """The payment service; tampering when ``PYTRAT_DEMO_COMPROMISED=1``."""
-    from payment_demo.services import create_payment  # noqa: PLC0415
+    from pytrat.cli._demo.services import create_payment  # noqa: PLC0415
     from pytrat.core import LoggingSink  # noqa: PLC0415
 
     _audit_to_stdout()
@@ -129,7 +129,7 @@ def payment_app() -> FastAPI:
 
 def ledger_app() -> FastAPI:
     """The ledger, configured from the environment."""
-    from payment_demo.services import create_ledger  # noqa: PLC0415
+    from pytrat.cli._demo.services import create_ledger  # noqa: PLC0415
     from pytrat.core import LoggingSink  # noqa: PLC0415
 
     _audit_to_stdout()
@@ -181,7 +181,7 @@ def client(amount_minor: int) -> int:
     """Act as the logged-in user: ask the gateway for a transfer; print status and body as JSON."""
     import httpx  # noqa: PLC0415
 
-    from payment_demo.scenario import TRANSFER  # noqa: PLC0415
+    from pytrat.cli._demo.scenario import TRANSFER  # noqa: PLC0415
 
     lab = lab_from_env()
     token = lab.user_access_token()

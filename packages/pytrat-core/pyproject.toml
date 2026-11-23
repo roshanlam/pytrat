@@ -25,7 +25,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/roshanlam/pytrat"
-Documentation = "https://github.com/roshanlam/pytrat/tree/main/docs"
+Documentation = "https://pytrat.readthedocs.io/"
 Source = "https://github.com/roshanlam/pytrat"
 Issues = "https://github.com/roshanlam/pytrat/issues"
 Changelog = "https://github.com/roshanlam/pytrat/blob/main/CHANGELOG.md"
@@ -36,3 +36,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pytrat"]
+
+# Test fixtures (pytrat_kit); pytest loads this only when it runs. See pytrat.core.testing.
+[project.entry-points.pytest11]
+pytrat = "pytrat.core.testing.pytest_plugin"

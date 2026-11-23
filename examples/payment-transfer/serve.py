@@ -23,9 +23,9 @@ from fastapi import FastAPI
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from payment_demo.lab import Lab, Urls
-from payment_demo.scenario import TRANSFER
-from payment_demo.services import create_gateway, create_ledger, create_payment, create_tts
+from pytrat.cli._demo.lab import Lab, Urls
+from pytrat.cli._demo.scenario import TRANSFER
+from pytrat.cli._demo.services import create_gateway, create_ledger, create_payment, create_tts
 
 PORTS = {"tts": 8701, "gateway": 8702, "payment": 8703, "ledger": 8704}
 

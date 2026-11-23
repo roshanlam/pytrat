@@ -1,0 +1,81 @@
+"""Act as the API gateway: get a Transaction Token for one order, then call orders-service.
+
+Start the TTS and the service first (see README.md), then run:  python gateway.py
+"""
+
+import time
+from pathlib import Path
+
+from pytrat.client import (
+    PrivateKeyJwtCredential,
+    TransactionClient,
+    TransactionTokenClient,
+    WorkloadJwtAuth,
+    bind_transaction,
+)
+from pytrat.core import SecretToken, StaticKeySet, TokenVerifier, VerifierSettings
+from pytrat.core.constants import TOKEN_TYPE_SELF_SIGNED
+from pytrat.core.crypto import load_private_key_pem, sign_compact
+
+TRUST_DOMAIN = "__TRUST_DOMAIN__"
+TTS = "http://127.0.0.1:8080"
+SERVICE = "http://127.0.0.1:8000"
+KEYS = Path(__file__).parent / "keys"
+ORDER = {"customer_id": "customer-42", "sku": "book-123", "quantity": 1}
+
+
+def logged_in_user(user: str) -> SecretToken:
+    """Stand-in for your identity provider: the gateway vouches for the logged-in user.
+
+    In production, pass the user's OAuth access token instead (TOKEN_TYPE_ACCESS_TOKEN) and list
+    your identity provider under `subject_tokens.jwt_access_token` in tts.yaml.
+    """
+    now = int(time.time())
+    claims = {"iss": "gateway", "aud": TTS, "sub": user, "scope": "orders.create",
+              "iat": now, "exp": now + 60}
+    key = load_private_key_pem((KEYS / "gateway.pem").read_bytes())
+    return SecretToken(sign_compact(claims, key, alg="ES256", kid="gateway", typ="JWT"))
+
+
+def main() -> None:
+    tts = TransactionTokenClient(
+        f"{TTS}/token",
+        # The gateway authenticates to the TTS with its own key (RFC 7523).
+        PrivateKeyJwtCredential(
+            "gateway", KEYS / "gateway.pem", alg="ES256", kid="gateway",
+            token_endpoint=f"{TTS}/token",
+        ),
+        # Tokens from the TTS are verified locally, like every service will.
+        TokenVerifier(
+            VerifierSettings(trust_domain=TRUST_DOMAIN),
+            StaticKeySet.from_jwks_file(KEYS / "tts.jwks.json"),
+        ),
+        allow_insecure_localhost=True,  # plain http is allowed on 127.0.0.1 only
+    )
+    service = TransactionClient(
+        [SERVICE],  # the token is only ever sent to these origins
+        auth=WorkloadJwtAuth(
+            workload_id="gateway", private_key_path=KEYS / "gateway.pem", kid="gateway",
+            alg="ES256", audiences={SERVICE: "orders-service"}, allow_insecure_localhost=True,
+        ),
+        allow_insecure_localhost=True,
+    )
+    with tts, service:
+        # The token records exactly this order in its tctx.
+        token = tts.issue(
+            audience=TRUST_DOMAIN,
+            scope="orders.create",
+            subject_token=logged_in_user("user:alice"),
+            subject_token_type=TOKEN_TYPE_SELF_SIGNED,
+            request_details=ORDER,
+        )
+        print(f"Transaction Token issued for txn {token.id}: {token.claims.tctx}")
+        with bind_transaction(token):  # outbound calls now carry it in the Txn-Token header
+            honest = service.post(f"{SERVICE}/internal/orders", json=ORDER)
+            print(f"order as authorized    -> {honest.status_code} {honest.json()}")
+            tampered = service.post(f"{SERVICE}/internal/orders", json={**ORDER, "quantity": 500})
+            print(f"quantity changed to 500 -> {tampered.status_code} {tampered.json()}")
+
+
+if __name__ == "__main__":
+    main()

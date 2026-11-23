@@ -29,7 +29,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
-from payment_demo.lab import ALG, KEY_NAMES, verification_key, write_private
+from pytrat.cli._demo.lab import ALG, KEY_NAMES, verification_key, write_private
 from pytrat.core import StaticKeySet
 from pytrat.core.crypto import generate_private_key, private_key_to_pem
 

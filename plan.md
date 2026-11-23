@@ -146,13 +146,13 @@ both drafts into `docs/spec/`; before starting M7, re-read those sections verbat
 
 | Package | Depends on | Why |
 |---|---|---|
-| core | `pyjwt[crypto]`, `pydantic>=2` | Audited JOSE; strict boundary parsing |
+| core | `pyjwt[crypto]`, `pydantic>=2` | Audited JOSE; strict boundary parsing. Also registers a `pytest11` plugin (`pytrat.core.testing.pytest_plugin`); pytest is not a dependency, the plugin loads only under pytest |
 | policy | core, `pyyaml` | `yaml.safe_load` only |
 | client | core, `httpx` | Sync + async with one API, mockable transport |
 | fastapi | core, policy, client, `fastapi` | — |
 | server | core, policy, agents, `fastapi`, `uvicorn`, `aiosqlite` | Reference TTS |
 | agents | core | — |
-| cli | all, `typer` | — |
+| cli | all, `typer` | `pytrat demo` runs the payment scenario (FastAPI services + reference TTS) in-process |
 | django | core, policy, client, `django>=5` | — |
 
 Dev: `ruff`, `mypy`, `pytest`, `pytest-asyncio`, `pytest-cov`, `hypothesis`, `import-linter`,
@@ -741,7 +741,7 @@ and a 500 on bound form bodies. See `docs/compatibility.md` P28–P30.
 | M5 FastAPI | Done |
 | M6 demo / v0.1 | Done: `examples/payment-transfer` (in-process and real sockets), run in CI |
 | M7 agents | Done: `examples/agent-delegation`, property tests for monotonic attenuation |
-| M8 DX | Done: CLI, Django + example, mkdocs site (`mkdocs build --strict`, snippets type-checked) |
+| M8 DX | Done: CLI (including `pytrat init` and `pytrat demo`, whose scenario now lives in `pytrat.cli._demo` and is shared with `examples/payment-transfer`), Django + example, `pytrat_kit` pytest plugin, mkdocs site (`mkdocs build --strict`, snippets type-checked; hosted on Read the Docs via `.readthedocs.yaml`) |
 | M9 hardening | Done except the external audit: Atheris fuzzing (13 harnesses, nightly), failure injection, `pytrat-redis`, `pytrat-otel`, Tokenetes interoperability (shown **not** interoperable; draft -01 vs -11, see `docs/interop/tokenetes.md`), Docker Compose over TLS, benchmark report (`docs/benchmarks.md`), and a second independent review whose findings are fixed. **Not done:** an external third-party audit, which must be commissioned; the brief is `docs/security/audit.md`. |
 
 Dependency additions in M9: `redis>=6` (pytrat-redis only), `opentelemetry-api` (pytrat-otel only); dev-only `opentelemetry-sdk`, `atheris` (Linux x86-64, `fuzz` group), `mkdocs-material` and `mkdocstrings` (`docs` group). New packages `pytrat-redis` and `pytrat-otel` depend only on core, and import-linter enforces it.

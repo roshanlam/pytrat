@@ -1844,6 +1844,7 @@ source = { editable = "packages/pytrat-cli" }
 dependencies = [
     { name = "pytrat-client" },
     { name = "pytrat-core" },
+    { name = "pytrat-fastapi" },
     { name = "pytrat-policy" },
     { name = "pytrat-server" },
     { name = "typer" },
@@ -1853,6 +1854,7 @@ dependencies = [
 requires-dist = [
     { name = "pytrat-client", editable = "packages/pytrat-client" },
     { name = "pytrat-core", editable = "packages/pytrat-core" },
+    { name = "pytrat-fastapi", editable = "packages/pytrat-fastapi" },
     { name = "pytrat-policy", editable = "packages/pytrat-policy" },
     { name = "pytrat-server", editable = "packages/pytrat-server" },
     { name = "typer", specifier = ">=0.12" },

@@ -1,10 +1,10 @@
 # CLI
 
-`pytrat-cli` installs the `pytrat` command: development keys, policy validation, token
-inspection and the reference TTS.
+`pytrat-cli` installs the `pytrat` command: a runnable demo, development keys, policy validation,
+token inspection and the reference TTS.
 
 ```bash
-uv add --dev pytrat-cli
+pip install "pytrat[cli]"      # or: uv add --dev "pytrat[cli]"
 pytrat --help
 ```
 
@@ -26,6 +26,51 @@ agent-profile: draft-araut-oauth-transaction-tokens-for-agents-03
 ```
 
 No options.
+
+### `pytrat init`
+
+Create a runnable starter project: development keys for a TTS and a gateway, a TTS configuration,
+a FastAPI service protected by PyTraT, its tests (which use the [`pytrat_kit`](testing.md)
+fixture), and a gateway script that obtains a token and calls the service.
+
+```console
+$ pytrat init my-service --trust-domain example.internal
+Created a PyTraT starter project in my-service/
+$ cd my-service && pytest
+5 passed
+```
+
+| Argument or option | Default | Meaning |
+|---|---|---|
+| `DIRECTORY` | `pytrat-starter` | Where to create the project. Created if missing. |
+| `--trust-domain` | `example.internal` | Trust Domain the TTS issues tokens for and the service accepts. |
+| `--force` / `--no-force` | `--no-force` | Overwrite files from an earlier `init`, including the keys. Without it, an existing file is never replaced. |
+
+Private keys are written with mode `0600` and listed in the generated `.gitignore`. They are for
+development only.
+
+### `pytrat demo`
+
+Run the payment-transfer story in-process: a gateway, a payment service, a ledger and the reference
+TTS, with keys generated into a temporary directory. A $100 transfer is recorded; then a
+compromised payment service rewrites it to $9,000, and the ledger refuses it with
+`403 TRANSACTION_CONTEXT_MISMATCH` and prints the audit event explaining why.
+
+```console
+$ pytrat demo
+...
+2. payment-service is compromised and rewrites $100.00 to $9,000.00
+   ledger: 403 refused (TRANSACTION_CONTEXT_MISMATCH)
+   ledger entries recorded: 0
+...
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--audit` / `--no-audit` | `--audit` | Print the ledger's audit event for the refused transfer. |
+
+Nothing listens on a port and no token is printed. Exits with status 1 if the story does not hold,
+which would be a bug.
 
 ### `pytrat keys generate`
 

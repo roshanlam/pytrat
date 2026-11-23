@@ -56,6 +56,58 @@ def version() -> None:
         typer.echo(f"{name}: {draft}")
 
 
+@app.command()
+def demo(
+    audit: Annotated[bool, typer.Option(help="Show the ledger's audit event.")] = True,
+) -> None:
+    """Watch a compromised service try to turn a $100 transfer into $9,000, and fail.
+
+    Runs a gateway, two services and the reference TTS in-process with freshly generated keys.
+    Nothing listens on a port and nothing is written outside a temporary directory.
+    """
+    import asyncio  # noqa: PLC0415 - keep the other commands' start-up light
+
+    from pytrat.cli._demo.narrative import run_demo  # noqa: PLC0415
+
+    if not asyncio.run(run_demo(show_audit=audit)):
+        raise _fail("the demo did not behave as expected; please report this as a bug")
+
+
+@app.command()
+def init(
+    directory: Annotated[Path, typer.Argument(help="Where to create the project.")] = Path(
+        "pytrat-starter"
+    ),
+    trust_domain: Annotated[
+        str, typer.Option(help="Trust Domain the TTS issues tokens for.")
+    ] = "example.internal",
+    force: Annotated[bool, typer.Option(help="Overwrite files from an earlier init.")] = False,
+) -> None:
+    """Create a runnable starter project: dev keys, a TTS config, a protected service and tests.
+
+    The keys are for development only. Private keys are written with mode 0600 and git-ignored.
+    """
+    from pytrat.cli._starter import existing_files, write_starter  # noqa: PLC0415
+
+    if not trust_domain or any(c.isspace() or c in "\"'\\" for c in trust_domain):
+        raise _fail("trust domain must be a non-empty identifier without spaces or quotes")
+    existing = existing_files(directory)
+    if existing and not force:
+        names = ", ".join(str(path) for path in existing)
+        raise _fail(f"{names} already exist(s); pass --force to overwrite")
+    write_starter(directory, trust_domain=trust_domain)
+    typer.secho(f"Created a PyTraT starter project in {directory}/", fg="green")
+    typer.echo(
+        f"\n  cd {directory}\n"
+        "  pytest                                            # the tests need no TTS\n\n"
+        "Then run it for real, each in its own terminal:\n\n"
+        "  pytrat tts serve --config tts.yaml --port 8080\n"
+        "  uvicorn service:app --factory --port 8000\n"
+        "  python gateway.py\n\n"
+        "README.md explains every file."
+    )
+
+
 @keys_app.command("generate")
 def keys_generate(
     kid: Annotated[str, typer.Option(help="Key identifier to publish in the JWKS.")],

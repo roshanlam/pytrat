@@ -1,0 +1,21 @@
+# Read the Docs builds the documentation site at https://pytrat.readthedocs.io/ on every push to
+# main, on its own infrastructure. The API reference (mkdocstrings) imports the packages, so the
+# whole workspace is installed from the lockfile, exactly as `uv run --group docs mkdocs build`.
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+  jobs:
+    pre_create_environment:
+      - asdf plugin add uv
+      - asdf install uv 0.13.5
+      - asdf global uv 0.13.5
+    create_environment:
+      - uv venv "${READTHEDOCS_VIRTUALENV_PATH}"
+    install:
+      - UV_PROJECT_ENVIRONMENT="${READTHEDOCS_VIRTUALENV_PATH}" uv sync --frozen --all-packages --group docs --no-dev
+
+mkdocs:
+  configuration: mkdocs.yml

@@ -20,20 +20,21 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /src
 
 # Third-party dependencies get their own cached layer. Only the workspace members the demo runs
-# (pytrat-server, pytrat-fastapi) and their dependencies are installed.
+# (pytrat-server, pytrat-fastapi, and pytrat-cli for the shared demo services) and their
+# dependencies are installed.
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=packages,target=packages \
     uv sync --frozen --no-dev --no-install-workspace \
-        --package pytrat-server --package pytrat-fastapi
+        --package pytrat-server --package pytrat-fastapi --package pytrat-cli
 
 # Workspace packages as regular (non-editable) installs.
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable \
-        --package pytrat-server --package pytrat-fastapi
+        --package pytrat-server --package pytrat-fastapi --package pytrat-cli
 
 FROM ${PYTHON_IMAGE} AS runtime
 

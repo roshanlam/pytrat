@@ -1,0 +1,39 @@
+# Development Transaction Token Service (TTS) for this project.
+# Run it:  pytrat tts serve --config tts.yaml --port 8080
+#
+# Every key is explained in the reference: https://github.com/roshanlam/pytrat/blob/main/docs/guides/tts.md
+# Relative paths resolve against this file's directory.
+
+trust_domain: __TRUST_DOMAIN__
+issuer: http://127.0.0.1:8080
+token_endpoint: http://127.0.0.1:8080/token   # plain http: development on loopback only
+token_lifetime_seconds: 60
+algorithms: [ES256]
+
+signing_keys:
+  - kid: tts
+    alg: ES256
+    private_key_path: keys/tts.pem             # only the TTS ever holds this file
+    state: active
+
+# Workloads allowed to ask for tokens, and the public keys they authenticate with.
+workloads:
+  - id: gateway
+    jwks_path: keys/gateway.jwks.json
+
+subject_tokens:
+  # The gateway vouches for the logged-in user with a JWT signed by its own key. Replace this with
+  # `jwt_access_token` (your identity provider's issuer, JWKS and audience) for real users.
+  self_signed:
+    enabled: true
+
+# Who may obtain what. A workload without a rule obtains nothing.
+issuance_policy:
+  workloads:
+    gateway:
+      scopes: [orders.create]
+      # Members of the request copied into the token's tctx, with their required JSON types.
+      tctx:
+        customer_id: string
+        sku: string
+        quantity: integer

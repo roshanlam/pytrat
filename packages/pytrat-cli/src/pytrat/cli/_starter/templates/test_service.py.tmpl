@@ -1,0 +1,63 @@
+"""Tests for orders-service. No TTS needed: the pytrat_kit fixture (from pytrat) stands in for it.
+
+Run them:  pytest
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+from service import TRUST_DOMAIN, create_app
+
+from pytrat.core.testing.pytest_plugin import TransactionTestKit
+
+ORDER = {"customer_id": "customer-42", "sku": "book-123", "quantity": 1}
+URL = "/internal/orders"
+
+
+@pytest.fixture
+def pytrat_trust_domain() -> str:
+    return TRUST_DOMAIN
+
+
+@pytest.fixture
+def client(pytrat_kit: TransactionTestKit):
+    app = create_app(pytrat_kit.tts_keys(), pytrat_kit.workload_keys("gateway", "intruder"))
+    with TestClient(app, base_url="https://orders.internal") as client:
+        yield client
+
+
+def authorized(kit: TransactionTestKit, *, caller: str = "gateway", **claims) -> dict[str, str]:
+    """Headers for a request from `caller`, carrying a token that authorizes ORDER."""
+    claims.setdefault("scope", "orders.create")
+    claims.setdefault("tctx", ORDER)
+    return kit.headers(caller=caller, audience="orders-service", **claims)
+
+
+def test_authorized_order_is_created(client, pytrat_kit) -> None:
+    response = client.post(URL, json=ORDER, headers=authorized(pytrat_kit))
+    assert response.status_code == 201
+    assert response.json()["order"] == ORDER
+
+
+def test_tampered_quantity_is_refused(client, pytrat_kit) -> None:
+    tampered = {**ORDER, "quantity": 500}
+    response = client.post(URL, json=tampered, headers=authorized(pytrat_kit))
+    assert response.status_code == 403
+    assert response.json()["reason_code"] == "TRANSACTION_CONTEXT_MISMATCH"
+
+
+def test_wrong_scope_is_refused(client, pytrat_kit) -> None:
+    response = client.post(URL, json=ORDER, headers=authorized(pytrat_kit, scope="orders.read"))
+    assert response.status_code == 403
+    assert response.json()["reason_code"] == "SCOPE_INSUFFICIENT"
+
+
+def test_other_callers_are_refused(client, pytrat_kit) -> None:
+    response = client.post(URL, json=ORDER, headers=authorized(pytrat_kit, caller="intruder"))
+    assert response.status_code == 403
+    assert response.json()["reason_code"] == "CALLER_NOT_ALLOWED"
+
+
+def test_request_without_a_token_is_refused(client) -> None:
+    response = client.post(URL, json=ORDER)
+    assert response.status_code == 401
+    assert response.json()["reason_code"] == "TOKEN_MISSING"

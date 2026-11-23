@@ -7,6 +7,21 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `pytrat demo`: the payment-transfer story ($100 recorded, a compromised service's $9,000
+  refused) runs straight after `pip install "pytrat[all]"`, with no clone. `pytrat-cli` now depends
+  on `pytrat-fastapi`, and the scenario moved from `examples/payment-transfer/payment_demo` into
+  the CLI package, where the examples reuse it.
+- `pytrat init`: writes a runnable starter project (development keys, a reference-TTS config, a
+  protected FastAPI service, its tests and a gateway script).
+- pytest plugin (`pytrat-core`, auto-registered): the `pytrat_kit` fixture stands in for the TTS
+  and calling workloads, building `Txn-Token` and workload-JWT headers from in-memory keys.
+  `pytrat_trust_domain` sets its Trust Domain. `pytrat.core.testing` is now a package.
+- Documentation site configuration for Read the Docs (`.readthedocs.yaml`), and a Testing guide.
+
+## [0.1.0] - 2026-11-17
+
+### Added
+
 - `pytrat-core`: Transaction Token claims, strict verifier (`verify_jws`/`TokenVerifier`), scopes,
   typed `tctx` binding, workload authenticators, replay store, audit events, RFC 9457 problem
   documents and test helpers, targeting `draft-ietf-oauth-transaction-tokens-11`.
